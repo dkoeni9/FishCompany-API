@@ -117,10 +117,11 @@ def get_companies(request):
 def sign_in(request):
     if request.method == "POST":
 
-        # Attempt to sign user in
-        username = request.POST.get("Username")
-        password = request.POST.get("Password")
-        user = authenticate(request, username=username, password=password)
+        data = json.loads(request.body)
+
+        login = data.get("Login")
+        password = data.get("Password")
+        user = authenticate(request, Login=login, Password=password)
 
         # Check if authentication successful
         if user is not None:
@@ -141,32 +142,52 @@ def sign_in(request):
 
 
 @csrf_exempt
-def register(request):
-    if request.method == "POST":
+def register_fisher(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method. POST required."}, status=405)
 
-        # Ensure password matches confirmation
-        password = request.POST["password"]
-        confirmation = request.POST["confirmation"]
-        if password != confirmation:
-            return render(
-                request, "mail/register.html", {"message": "Passwords must match."}
-            )
+    try:
+        data = json.loads(request.body)
 
-        # Attempt to create new user
-        try:
-            user = User.objects.create_user(email, email, password)
-            user.save()
-        except IntegrityError as e:
-            print(e)
-            return render(
-                request,
-                "mail/register.html",
-                {"message": "Email address already taken."},
-            )
-        login(request, user)
-        return HttpResponseRedirect(reverse("index"))
-    else:
-        return render(request, "mail/register.html")
+        login = data.get("Login")
+        password = data.get("Password")
+        first_name = data.get("FirstName")
+        middle_name = data.get(
+            "MiddleName", ""
+        )  # Если поле middle_name отсутствует, оно будет пустым
+        last_name = data.get("LastName")
+
+        if not login or not password or not first_name or not last_name:
+            return JsonResponse({"error": "Missing required fields."}, status=400)
+
+        if User.objects.filter(login=login).exists():
+            return JsonResponse({"error": "Login is already in use"}, status=400)
+
+        validate_password(password)
+
+        user = User.objects.create(
+            login=login,
+            password=password,  # Пароль сохраняется в открытом виде (небезопасно!)
+            first_name=first_name,
+            last_name=last_name,
+            middle_name=middle_name,
+        )
+
+        return JsonResponse({"message": "Registration successful"}, status=201)
+
+    except ValidationError as e:
+        return JsonResponse({"error": f"Validation Error: {str(e)}"}, status=400)
+
+    except Exception as e:
+        # Логируем ошибку для отладки
+        print(f"Error during registration: {str(e)}")
+        return JsonResponse(
+            {"error": f"An error occurred during registration: {str(e)}"}, status=400
+        )
+
+
+def get_info(request):
+    pass
 
 
 def get_fishes(request):
@@ -200,55 +221,3 @@ def validate_password(password):
         raise ValidationError("Password must contain at least one digit.")
     if not re.search(r"[A-Z]", password):
         raise ValidationError("Password must contain at least one uppercase letter.")
-
-
-# Эндпоинт для регистрации рыболова
-@csrf_exempt
-def register_fisher(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid method. POST required."}, status=405)
-
-    try:
-        # Получаем данные из тела запроса
-        data = json.loads(request.body)
-
-        # Проверка на обязательные поля
-        login = data.get("Login")
-        password = data.get("Password")
-        first_name = data.get("FirstName")
-        middle_name = data.get(
-            "MiddleName", ""
-        )  # Если поле middle_name отсутствует, оно будет пустым
-        last_name = data.get("LastName")
-
-        if not login or not password or not first_name or not last_name:
-            return JsonResponse({"error": "Missing required fields."}, status=400)
-
-        # Проверка, что логин не занят
-        if User.objects.filter(login=login).exists():
-            return JsonResponse({"error": "Login is already in use"}, status=400)
-
-        # Валидация пароля
-        validate_password(password)
-
-        # Создаем пользователя
-        user = User.objects.create(
-            login=login,
-            password=password,  # Пароль сохраняется в открытом виде (небезопасно!)
-            first_name=first_name,
-            last_name=last_name,
-            middle_name=middle_name,
-        )
-
-        # Возвращаем успешный ответ
-        return JsonResponse({"message": "Registration successful"}, status=201)
-
-    except ValidationError as e:
-        return JsonResponse({"error": f"Validation Error: {str(e)}"}, status=400)
-
-    except Exception as e:
-        # Логируем ошибку для отладки
-        print(f"Error during registration: {str(e)}")
-        return JsonResponse(
-            {"error": f"An error occurred during registration: {str(e)}"}, status=400
-        )
