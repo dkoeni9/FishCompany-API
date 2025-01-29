@@ -9,6 +9,7 @@ urlpatterns = [
     path("Admin/AddCompany", views.add_company),
     path("Admin/GetCompanies", views.get_companies),
     path("Auth/SignIn", views.sign_in),
+    path("Auth/RegisterFisher", views.register),
     path("Fish/GetFishes", views.get_fishes),
     path("Search/GetFishBases", views.search),
 ]

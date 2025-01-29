@@ -4,8 +4,6 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Prefetch
-
 
 from .models import Fish, FishBase, User
 
@@ -44,24 +42,17 @@ def get_companies(request):
             status=405,
         )
 
-    # Получаем параметр WithBases (по умолчанию False)
     with_bases = request.GET.get("WithBases", "false").lower() == "true"
 
-    # Получаем всех пользователей, которые являются компаниями
     companies = User.objects.filter(company_name__isnull=False).distinct()
 
-    # Если нужно загрузить рыбные базы
     if with_bases:
-        # Загрузим все рыбные базы с фильтрацией по company_name
-        fish_bases_queryset = FishBase.objects.all()
+        fish_bases = FishBase.objects.all()
 
-        # Для каждой компании будем фильтровать рыбные базы по company_name
         companies_with_bases = []
         for company in companies:
-            # Фильтруем рыбные базы по company_name компании
-            fish_bases = fish_bases_queryset.filter(company_name=company.company_name)
+            fish_bases = fish_bases.filter(company_name=company.company_name)
 
-            # Добавляем к компании атрибут с рыбными базами
             company_data = {
                 "Id": company.pk,
                 "Login": company.login,
@@ -99,7 +90,6 @@ def get_companies(request):
             }
             companies_with_bases.append(company_data)
 
-        # Если рыбных баз не нужно, просто добавляем компании без фильтрации
         if not with_bases:
             for company in companies:
                 company_data = {
@@ -116,16 +106,16 @@ def get_companies(request):
 
         result = companies_with_bases
 
-    # Возвращаем результат в формате JSON
     return JsonResponse(result, safe=False)
 
 
+@csrf_exempt
 def sign_in(request):
     if request.method == "POST":
 
         # Attempt to sign user in
-        username = request.POST["username"]
-        password = request.POST["password"]
+        username = request.POST.get("Username")
+        password = request.POST.get("Password")
         user = authenticate(request, username=username, password=password)
 
         # Check if authentication successful
@@ -146,33 +136,33 @@ def sign_in(request):
 #     return HttpResponseRedirect(reverse("index"))
 
 
-# def register(request):
-#     if request.method == "POST":
-#         email = request.POST["email"]
+@csrf_exempt
+def register(request):
+    if request.method == "POST":
 
-#         # Ensure password matches confirmation
-#         password = request.POST["password"]
-#         confirmation = request.POST["confirmation"]
-#         if password != confirmation:
-#             return render(
-#                 request, "mail/register.html", {"message": "Passwords must match."}
-#             )
+        # Ensure password matches confirmation
+        password = request.POST["password"]
+        confirmation = request.POST["confirmation"]
+        if password != confirmation:
+            return render(
+                request, "mail/register.html", {"message": "Passwords must match."}
+            )
 
-#         # Attempt to create new user
-#         try:
-#             user = User.objects.create_user(email, email, password)
-#             user.save()
-#         except IntegrityError as e:
-#             print(e)
-#             return render(
-#                 request,
-#                 "mail/register.html",
-#                 {"message": "Email address already taken."},
-#             )
-#         login(request, user)
-#         return HttpResponseRedirect(reverse("index"))
-#     else:
-#         return render(request, "mail/register.html")
+        # Attempt to create new user
+        try:
+            user = User.objects.create_user(email, email, password)
+            user.save()
+        except IntegrityError as e:
+            print(e)
+            return render(
+                request,
+                "mail/register.html",
+                {"message": "Email address already taken."},
+            )
+        login(request, user)
+        return HttpResponseRedirect(reverse("index"))
+    else:
+        return render(request, "mail/register.html")
 
 
 def get_fishes(request):
