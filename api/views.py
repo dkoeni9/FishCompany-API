@@ -3,11 +3,52 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Fish, FishBase, User
 
 
 # Create your views here.
+
+
+@csrf_exempt
+def add_company(request):
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "Invalid method specified in request. POST request required."},
+            status=405,
+        )
+
+    data = json.loads(request.body)
+    user = User(
+        login=data.get("Login"),
+        password=data.get("Password"),
+        first_name=data.get("FirstName"),
+        middle_name=data.get("MiddleName"),
+        last_name=data.get("LastName"),
+        company_name=data.get("Name"),
+        company_address=data.get("Address"),
+    )
+    user.save()
+
+    return JsonResponse({"Id": user.pk}, status=201)
+
+
+def get_companies(request):
+    if request.method != "GET":
+        return JsonResponse(
+            {"error": "Invalid method specified in request."},
+            status=405,
+        )
+
+    with_bases = request.GET.get("WithBases", "false").lower() == "true"
+
+    if with_bases:
+        companies = [{"id": 1, "name": "Company with bases"}]
+    else:
+        companies = [{"id": 2, "name": "Company without bases"}]
+
+
 def sign_in(request):
     if request.method == "POST":
 
