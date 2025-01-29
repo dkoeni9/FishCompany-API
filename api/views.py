@@ -36,14 +36,7 @@ def add_company(request):
     return JsonResponse({"Id": user.pk}, status=201)
 
 
-from django.db.models import Prefetch
-from django.http import JsonResponse
-
-
-from django.db.models import Prefetch
-from django.http import JsonResponse
-
-
+@csrf_exempt
 def get_companies(request):
     if request.method != "GET":
         return JsonResponse(
