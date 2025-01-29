@@ -7,12 +7,75 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 import re
-
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Fish, FishBase, User
 
 
 # Create your views here.
+
+
+# Функция для генерации токена
+# Эндпоинт для входа
+def authenticate_custom(login, password):
+    try:
+        # Ищем пользователя по полю login (вместо username)
+        user = User.objects.get(login=login)
+        # Проверяем пароль
+        if user.password == password:  # В реальной жизни пароль нужно хешировать
+            return user
+        else:
+            return None
+    except User.DoesNotExist:
+        return None
+
+
+@csrf_exempt
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {"refresh": str(refresh), "access": str(refresh.access_token)}
+
+
+@csrf_exempt
+def sign_in(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method. POST required."}, status=405)
+
+    try:
+        # Получаем данные из тела запроса
+        data = json.loads(request.body)
+
+        login = data.get("Login")
+        password = data.get("Password")
+
+        if not login or not password:
+            return JsonResponse(
+                {"error": "One or more validation errors occurred"}, status=400
+            )
+
+        # Используем кастомную аутентификацию
+        user = authenticate_custom(login, password)
+
+        if user is None:
+            return JsonResponse({"error": "Login or password incorrect"}, status=400)
+
+        # Генерация токенов
+        tokens = get_tokens_for_user(user)
+
+        # Формируем данные для ответа
+        user_data = {
+            "Id": user.id,
+            "Login": user.login,
+            "FullName": f"{user.first_name} {user.last_name}",
+            "Role": "Fisher",  # Можно добавить логику для определения роли
+            "Token": tokens["access"],
+        }
+
+        return JsonResponse(user_data, status=200)
+
+    except Exception as e:
+        # Логирование ошибки для отладки
+        print(f"Error during sign-in: {str(e)}")
+        return JsonResponse({"error": "An error occurred during sign-in."}, status=400)
 
 
 @csrf_exempt
@@ -122,25 +185,26 @@ def get_companies(request):
     return JsonResponse(result, safe=False)
 
 
-def sign_in(request):
-    if request.method == "POST":
+# @csrf_exempt
+# def sign_in(request):
+#     if request.method == "POST":
 
-        # Attempt to sign user in
-        username = request.POST["username"]
-        password = request.POST["password"]
-        user = authenticate(request, username=username, password=password)
+#         # Attempt to sign user in
+#         username = request.POST["username"]
+#         password = request.POST["password"]
+#         user = authenticate(request, username=username, password=password)
 
-        # Check if authentication successful
-        if user is not None:
-            login(request, user)
-            # return HttpResponseRedirect(reverse("index"))
-            return JsonResponse({"message": "Success"}, status=200)
-        else:
-            return JsonResponse(
-                {"message": "Invalid email and/or password."},
-            )
-    # else:
-    #     return render(request, "mail/login.html")
+#         # Check if authentication successful
+#         if user is not None:
+#             login(request, user)
+#             # return HttpResponseRedirect(reverse("index"))
+#             return JsonResponse({"message": "Success"}, status=200)
+#         else:
+#             return JsonResponse(
+#                 {"message": "Invalid email and/or password."},
+#             )
+# else:
+#     return render(request, "mail/login.html")
 
 
 # def logout_view(request):
