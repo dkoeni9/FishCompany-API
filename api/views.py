@@ -34,6 +34,7 @@ def add_company(request):
     return JsonResponse({"Id": user.pk}, status=201)
 
 
+@csrf_exempt
 def get_companies(request):
     if request.method != "GET":
         return JsonResponse(
@@ -41,12 +42,13 @@ def get_companies(request):
             status=405,
         )
 
+    users = User.objects.all()
     with_bases = request.GET.get("WithBases", "false").lower() == "true"
 
     if with_bases:
-        companies = [{"id": 1, "name": "Company with bases"}]
-    else:
-        companies = [{"id": 2, "name": "Company without bases"}]
+        return JsonResponse([user.serialize() for user in users], safe=False)
+
+    return JsonResponse([user.serialize() for user in users], safe=False)
 
 
 def sign_in(request):
