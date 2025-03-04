@@ -6,6 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 
 class Fish(models.Model):
@@ -61,14 +62,11 @@ class FishBase(models.Model):
         }
 
 
-class User(models.Model):
-    login = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    first_name = models.CharField(max_length=50, blank=True, null=True)
+class User(AbstractUser):
     middle_name = models.CharField(max_length=50, blank=True, null=True)
-    last_name = models.CharField(max_length=50, blank=True, null=True)
     company_name = models.CharField(max_length=100, blank=True, null=True)
     company_address = models.CharField(max_length=255, blank=True, null=True)
+    # is_staff?
     works_on_fish_base = models.ForeignKey(
         FishBase, models.DO_NOTHING, blank=True, null=True
     )
@@ -80,7 +78,7 @@ class User(models.Model):
 
     def serialize(self):
         return {
-            "login": self.login,
+            "username": self.username,
             "password": self.password,
             "first_name": self.first_name,
             "middle_name": self.middle_name,
