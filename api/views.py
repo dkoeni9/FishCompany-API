@@ -11,8 +11,7 @@ import re
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework import generics
 from .models import Fish, FishBase, User
 from .serializers import FishSerializer
 
@@ -24,20 +23,9 @@ def FishApiView(ListAPIView):
     pass
 
 
-class fish_list(APIView):
-    def get(self, request, format=None):
-        fishes = Fish.objects.all()
-        serializer = FishSerializer(fishes, many=True)
-        return Response(serializer.data)
-
-
-def get_fishes(request):
-    if request.method == "GET":
-        fishes = Fish.objects.all()
-
-        return JsonResponse([fish.serialize() for fish in fishes], safe=False)
-
-    return JsonResponse({"error": "GET request required."}, status=400)
+class FishList(generics.ListAPIView):
+    queryset = Fish.objects.all()
+    serializer_class = FishSerializer
 
 
 @csrf_exempt

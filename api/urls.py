@@ -13,7 +13,7 @@ urlpatterns = [
     path("Auth/SignIn", views.sign_in),
     path("Auth/RegisterFisher", views.register_fisher),
     path("Company/GetInfo", views.get_info),
-    path("Fish/GetFishes", views.fish_list.as_view()),
+    path("Fish/GetFishes", views.FishList.as_view()),
     path("Search/GetFishBases", views.search),
 ]
 
