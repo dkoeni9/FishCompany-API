@@ -24,14 +24,11 @@ def FishApiView(ListAPIView):
     pass
 
 
-@api_view(["GET", "POST"])
-def fish_list(request, format=None):
-    if request.method == "GET":
+class fish_list(APIView):
+    def get(self, request, format=None):
         fishes = Fish.objects.all()
         serializer = FishSerializer(fishes, many=True)
         return Response(serializer.data)
-
-    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_fishes(request):
