@@ -10,9 +10,9 @@ import re
 
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListAPIView
-from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from .models import Fish, FishBase, User
 from .serializers import FishSerializer
 
@@ -29,7 +29,7 @@ def fish_list(request, format=None):
     if request.method == "GET":
         fishes = Fish.objects.all()
         serializer = FishSerializer(fishes, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
     return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
