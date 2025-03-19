@@ -12,11 +12,9 @@ from rest_framework import generics
 from .models import Fish, FishBase, User
 from .serializers import FishSerializer
 
-from rest_framework.authentication import (
-    SessionAuthentication,
-    BasicAuthentication,
-    TokenAuthentication,
-)
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from .authentication import TokenAuthentication
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
