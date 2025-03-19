@@ -6,6 +6,7 @@ from . import views
 
 urlpatterns = [
     # path("", views.index, name="index"),
+    path("example/", views.ExampleView.as_view()),
     path("auth/", include("rest_framework.urls")),
     path("Auth/RegisterFisher", views.register_fisher),
     path("Admin/AddCompany", views.add_company),
