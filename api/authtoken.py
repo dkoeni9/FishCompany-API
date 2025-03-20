@@ -18,6 +18,7 @@ class CustomAuthToken(ObtainAuthToken):
                 "id": user.pk,
                 "username": user.username,
                 "full_name": f"{user.first_name} {user.middle_name} {user.last_name}",
+                "role": "role",
                 "token": token.key,
             }
         )
