@@ -141,42 +141,6 @@ def get_companies(request):
     return JsonResponse(result, safe=False)
 
 
-# @csrf_exempt
-# def sign_in(request):
-#     if request.method == "POST":
-@csrf_exempt
-def sign_in(request):
-    if request.method == "POST":
-
-        #         # Attempt to sign user in
-        #         username = request.POST["username"]
-        #         password = request.POST["password"]
-        #         user = authenticate(request, username=username, password=password)
-        data = json.loads(request.body)
-
-        login = data.get("Login")
-        password = data.get("Password")
-        user = authenticate(request, Login=login, Password=password)
-
-
-#         # Check if authentication successful
-#         if user is not None:
-#             login(request, user)
-#             # return HttpResponseRedirect(reverse("index"))
-#             return JsonResponse({"message": "Success"}, status=200)
-#         else:
-#             return JsonResponse(
-#                 {"message": "Invalid email and/or password."},
-#             )
-# else:
-#     return render(request, "mail/login.html")
-
-
-# def logout_view(request):
-#     logout(request)
-#     return HttpResponseRedirect(reverse("index"))
-
-
 @csrf_exempt
 def register_fisher(request):
     if request.method != "POST":
