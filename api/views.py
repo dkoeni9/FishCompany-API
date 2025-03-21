@@ -6,7 +6,6 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-import re
 
 from rest_framework import generics
 from .models import Fish, FishBase, User
@@ -18,6 +17,7 @@ from .authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 
 # Create your views here.
 
@@ -141,51 +141,6 @@ def get_companies(request):
     return JsonResponse(result, safe=False)
 
 
-@csrf_exempt
-def register_fisher(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid method. POST required."}, status=405)
-
-    try:
-        data = json.loads(request.body)
-
-        login = data.get("Login")
-        password = data.get("Password")
-        first_name = data.get("FirstName")
-        middle_name = data.get(
-            "MiddleName", ""
-        )  # Если поле middle_name отсутствует, оно будет пустым
-        last_name = data.get("LastName")
-
-        if not login or not password or not first_name or not last_name:
-            return JsonResponse({"error": "Missing required fields."}, status=400)
-
-        if User.objects.filter(login=login).exists():
-            return JsonResponse({"error": "Login is already in use"}, status=400)
-
-        validate_password(password)
-
-        user = User.objects.create(
-            login=login,
-            password=password,  # Пароль сохраняется в открытом виде (небезопасно!)
-            first_name=first_name,
-            last_name=last_name,
-            middle_name=middle_name,
-        )
-
-        return JsonResponse({"message": "Registration successful"}, status=201)
-
-    except ValidationError as e:
-        return JsonResponse({"error": f"Validation Error: {str(e)}"}, status=400)
-
-    except Exception as e:
-        # Логируем ошибку для отладки
-        print(f"Error during registration: {str(e)}")
-        return JsonResponse(
-            {"error": f"An error occurred during registration: {str(e)}"}, status=400
-        )
-
-
 def get_info(request):
     pass
 
@@ -202,13 +157,3 @@ def search(request):
         return JsonResponse([base.serialize() for base in fish_bases], safe=False)
 
     return JsonResponse({"error": "GET request required."}, status=400)
-
-
-# Функция для валидации пароля
-def validate_password(password):
-    if len(password) < 8:
-        raise ValidationError("Password must be at least 8 characters long.")
-    if not re.search(r"\d", password):
-        raise ValidationError("Password must contain at least one digit.")
-    if not re.search(r"[A-Z]", password):
-        raise ValidationError("Password must contain at least one uppercase letter.")

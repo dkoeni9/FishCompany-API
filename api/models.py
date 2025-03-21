@@ -17,13 +17,6 @@ class Fish(models.Model):
         managed = True
         db_table = "fish"
 
-    def serialize(self):
-        return {
-            "id": self.pk,
-            "name": self.name,
-            "description": self.description,
-        }
-
 
 class FishBase(models.Model):
     company_name = models.CharField(max_length=100, blank=True, null=True)
@@ -47,19 +40,6 @@ class FishBase(models.Model):
     class Meta:
         managed = True
         db_table = "fish_base"
-
-    def serialize(self):
-        return {
-            "company_name": self.company_name,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "address": self.address,
-            "name": self.name,
-            "description": self.description,
-            "price_per_hour": self.price_per_hour,
-            "entry_price": self.entry_price,
-            "fish_in_base": self.fish_in_base,
-        }
 
 
 class CustomUserManager(BaseUserManager):
@@ -95,21 +75,9 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
 
-    REQUIRED_FIELDS = []
+    # REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
+    REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
 
     class Meta:
         managed = True
         db_table = "user"
-
-    def serialize(self):
-        return {
-            "username": self.username,
-            "password": self.password,
-            "first_name": self.first_name,
-            "middle_name": self.middle_name,
-            "last_name": self.last_name,
-            "company_name": self.company_name,
-            "company_address": self.company_address,
-            "works_on_fish_base": self.works_on_fish_base,
-            "description_worker_on_fish_base": self.description_worker_on_fish_base,
-        }
