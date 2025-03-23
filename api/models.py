@@ -13,9 +13,13 @@ class Fish(models.Model):
     name = models.CharField(max_length=100, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         managed = True
         db_table = "fish"
+        verbose_name_plural = "fishes"
 
 
 class FishBase(models.Model):
@@ -36,6 +40,9 @@ class FishBase(models.Model):
         max_digits=10, decimal_places=2, blank=True, null=True
     )
     fish_in_base = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return f"'{self.name}' base of '{self.company_name}' company"
 
     class Meta:
         managed = True
