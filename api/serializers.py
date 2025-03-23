@@ -12,6 +12,7 @@ class FishSerializer(serializers.ModelSerializer):
 
 
 class FishBaseSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = FishBase
         fields = "__all__"
@@ -21,6 +22,16 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = "__all__"
+
+
+class UserCompanySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField(source="company_name")
+    address = serializers.CharField(source="company_address")
+
+    class Meta:
+        model = User
+        fields = ("id", "name", "address")
 
 
 User = get_user_model()
