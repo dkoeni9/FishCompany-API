@@ -1,22 +1,22 @@
 import json
-from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 
-from rest_framework import generics
 from .models import Fish, FishBase, User
-from .serializers import FishSerializer
+from .permissions import *
+from .serializers import *
 
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from .authentication import TokenAuthentication
-
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import generics
+from rest_framework.authentication import (
+    SessionAuthentication,
+    BasicAuthentication,
+    TokenAuthentication,
+)
+from rest_framework.permissions import AllowAny
 
 
 # Create your views here.
@@ -24,11 +24,9 @@ from rest_framework.views import APIView
 
 class ExampleView(APIView):
     authentication_classes = [
-        SessionAuthentication,
-        BasicAuthentication,
         TokenAuthentication,
     ]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, format=None):
         content = {
@@ -38,9 +36,35 @@ class ExampleView(APIView):
         return Response(content)
 
 
-class FishList(generics.ListAPIView):
+class UserCompanyView(generics.RetrieveAPIView):
+    serializer_class = UserCompanySerializer
+    permission_classes = [IsEntrepreneur]
+
+    def get_object(self):
+        return self.request.user
+
+
+class CompanyFishBaseView(generics.ListAPIView):
+    serializer_class = FishBaseSerializer
+    permission_classes = [IsEntrepreneur]
+
+    def get_queryset(self):
+
+        # user_profile = User.objects.select_related("company").get(user=self.request.user)
+        # company = user_profile.company
+
+        # return FishBase.objects.filter(company_name=company.name)
+
+        user = self.request.user
+        company_name = user.company_name
+
+        return FishBase.objects.filter(company_name=company_name)
+
+
+class FishListView(generics.ListAPIView):
     queryset = Fish.objects.all()
     serializer_class = FishSerializer
+    permission_classes = [IsEntrepreneur]
 
 
 @csrf_exempt
@@ -139,10 +163,6 @@ def get_companies(request):
         result = companies_with_bases
 
     return JsonResponse(result, safe=False)
-
-
-def get_info(request):
-    pass
 
 
 def search(request):
