@@ -34,10 +34,31 @@ class FishBaseSerializer(serializers.ModelSerializer):
         # fields += ("company_name",)
 
 
+class SimpleFishBaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FishBase
+        fields = ("id", "name", "address")
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        exclude = ["password"]
+
+
+class CompanyStaffSerializer(serializers.ModelSerializer):
+    fish_base = SimpleFishBaseSerializer(source="works_on_fish_base", read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "fish_base",
+        )
 
 
 class UserCompanySerializer(serializers.ModelSerializer):

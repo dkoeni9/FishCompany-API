@@ -49,7 +49,6 @@ class CompanyFishBaseView(generics.ListAPIView):
     permission_classes = [IsEntrepreneur]
 
     def get_queryset(self):
-
         # user_profile = User.objects.select_related("company").get(user=self.request.user)
         # company = user_profile.company
 
@@ -59,6 +58,21 @@ class CompanyFishBaseView(generics.ListAPIView):
         company_name = user.company_name
 
         return FishBase.objects.filter(company_name=company_name)
+
+
+class CompanyStaffView(generics.ListAPIView):
+    serializer_class = CompanyStaffSerializer
+    permission_classes = [IsEntrepreneur]
+
+    def get_queryset(self):
+        user = self.request.user
+        company_name = user.company_name
+
+        fish_base_ids = FishBase.objects.filter(company_name=company_name).values_list(
+            "id", flat=True
+        )
+
+        return User.objects.filter(works_on_fish_base_id__in=fish_base_ids)
 
 
 class FishListView(generics.ListAPIView):
