@@ -44,12 +44,12 @@ class IsStaff(BasePermission):
         return request.user.groups.filter(name="Staff").exists()
 
 
-class IsFisherman(BasePermission):
+class IsFisher(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        return request.user.groups.filter(name="Fisherman").exists()
+        return request.user.groups.filter(name="Fisher").exists()
 
 
 class IsAdmin(BasePermission):
