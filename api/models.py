@@ -31,7 +31,7 @@ class FishBase(models.Model):
     description = models.TextField(blank=True, null=True)
     price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
     entry_price = models.DecimalField(max_digits=10, decimal_places=2)
-    fish_in_base = models.JSONField()
+    fish_in_base = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return f"'{self.name}' base of '{self.company_name}' company"
@@ -74,7 +74,6 @@ class User(AbstractUser):
 
     objects = CustomUserManager()
 
-    # REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
     REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
 
     class Meta:

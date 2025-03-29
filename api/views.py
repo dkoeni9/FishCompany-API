@@ -9,6 +9,7 @@ from .permissions import *
 from .serializers import *
 
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.authentication import (
@@ -73,6 +74,24 @@ class CompanyStaffView(generics.ListAPIView):
         )
 
         return User.objects.filter(works_on_fish_base_id__in=fish_base_ids)
+
+
+class CompanyAddBaseView(generics.CreateAPIView):
+    serializer_class = FishBaseSerializer
+    permission_classes = [IsEntrepreneur]
+
+    def create(self, request, *args, **kwargs):
+        user = self.request.user
+        data = self.request.data.copy()
+        data["company_name"] = user.company_name
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class FishListView(generics.ListAPIView):

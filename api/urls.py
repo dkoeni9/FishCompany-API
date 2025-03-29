@@ -22,6 +22,7 @@ urlpatterns = [
     path("Company/GetInfo", views.UserCompanyView.as_view()),
     path("Company/GetFishBases", views.CompanyFishBaseView.as_view()),
     path("Company/GetStaff", views.CompanyStaffView.as_view()),
+    path("Company/AddBase", views.CompanyAddBaseView.as_view()),
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),
     # Search
