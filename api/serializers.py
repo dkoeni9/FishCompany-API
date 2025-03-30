@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
 
-from .models import Fish, FishBase, User
+from .models import Fish, FishBase
 from rest_framework import serializers
-from djoser.serializers import TokenSerializer
+from djoser.conf import settings
+from djoser.serializers import UserCreateSerializer, TokenSerializer
+
+User = get_user_model()
 
 
 class FishSerializer(serializers.ModelSerializer):
@@ -40,13 +43,8 @@ class SimpleFishBaseSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "address")
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        exclude = ["password"]
-
-
 class CompanyStaffSerializer(serializers.ModelSerializer):
+    works_on_fish_base_id = serializers.CharField(write_only=True)
     fish_base = SimpleFishBaseSerializer(source="works_on_fish_base", read_only=True)
 
     class Meta:
@@ -57,6 +55,7 @@ class CompanyStaffSerializer(serializers.ModelSerializer):
             "first_name",
             "middle_name",
             "last_name",
+            "works_on_fish_base_id",
             "fish_base",
         )
 
@@ -71,7 +70,17 @@ class UserCompanySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "address")
 
 
-User = get_user_model()
+class CustomUserCreateSerializer(UserCreateSerializer):
+    works_on_fish_base = serializers.PrimaryKeyRelatedField(
+        queryset=FishBase.objects.all(), write_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
+            User.REQUIRED_FIELDS
+        )
+        fields += ("works_on_fish_base",)
 
 
 class CustomTokenSerializer(TokenSerializer):

@@ -8,6 +8,8 @@ from .models import Fish, FishBase, User
 from .permissions import *
 from .serializers import *
 
+from djoser.views import UserViewSet as DjoserUserViewSet
+
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -81,8 +83,8 @@ class CompanyAddBaseView(generics.CreateAPIView):
     permission_classes = [IsEntrepreneur]
 
     def create(self, request, *args, **kwargs):
-        user = self.request.user
-        data = self.request.data.copy()
+        user = request.user
+        data = request.data.copy()
         data["company_name"] = user.company_name
 
         serializer = self.get_serializer(data=data)
@@ -91,6 +93,57 @@ class CompanyAddBaseView(generics.CreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
+class CompanyAddStaffViewSet(DjoserUserViewSet):
+    permission_classes = [IsEntrepreneur]
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        data = request.data.copy()
+        fish_base_id = data.pop("fish_base_id", None)
+
+        if fish_base_id:
+            try:
+                fish_base = FishBase.objects.get(id=fish_base_id)
+
+                if fish_base.company_name != user.company_name:
+                    return Response(
+                        {"error": "Fish base does not belong to your company."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                data["works_on_fish_base"] = fish_base.id
+            except FishBase.DoesNotExist:
+                return Response(
+                    {"error": "Fish base not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
+class CompanyRemoveStaffView(generics.DestroyAPIView):
+    serializer_class = CompanyStaffSerializer
+    permission_classes = [IsEntrepreneur]
+
+    def get_queryset(self):
+        user = self.request.user
+        company_name = user.company_name
+
+        fish_base_ids = FishBase.objects.filter(company_name=company_name).values_list(
+            "id", flat=True
+        )
+
+        return User.objects.filter(
+            works_on_fish_base_id__in=fish_base_ids, is_staff=True
         )
 
 

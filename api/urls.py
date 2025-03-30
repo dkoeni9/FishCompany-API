@@ -23,6 +23,8 @@ urlpatterns = [
     path("Company/GetFishBases", views.CompanyFishBaseView.as_view()),
     path("Company/GetStaff", views.CompanyStaffView.as_view()),
     path("Company/AddBase", views.CompanyAddBaseView.as_view()),
+    path("Company/AddStaff", views.CompanyAddStaffViewSet.as_view({"post": "create"})),
+    path("Company/RemoveStaff/<int:id>", views.CompanyRemoveStaffView.as_view()),
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),
     # Search
