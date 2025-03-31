@@ -96,7 +96,7 @@ class CompanyAddBaseView(generics.CreateAPIView):
         )
 
 
-class CompanyAddStaffViewSet(DjoserUserViewSet):
+class CustomUserViewSet(DjoserUserViewSet):
     permission_classes = [IsEntrepreneur]
 
     def create(self, request, *args, **kwargs):
@@ -129,22 +129,26 @@ class CompanyAddStaffViewSet(DjoserUserViewSet):
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        current_user = request.user
 
-class CompanyRemoveStaffView(generics.DestroyAPIView):
-    serializer_class = CompanyStaffSerializer
-    permission_classes = [IsEntrepreneur]
+        if not user.works_on_fish_base:
+            return Response(
+                {
+                    "error": "You cannot delete a user who is not assigned to a fish base."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    def get_queryset(self):
-        user = self.request.user
-        company_name = user.company_name
+        if user.works_on_fish_base.company_name != current_user.company_name:
+            return Response(
+                {"error": "You can only delete employees of your company."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        fish_base_ids = FishBase.objects.filter(company_name=company_name).values_list(
-            "id", flat=True
-        )
-
-        return User.objects.filter(
-            works_on_fish_base_id__in=fish_base_ids, is_staff=True
-        )
+        self.perform_destroy(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FishListView(generics.ListAPIView):

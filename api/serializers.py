@@ -3,7 +3,11 @@ from django.contrib.auth import get_user_model
 from .models import Fish, FishBase
 from rest_framework import serializers
 from djoser.conf import settings
-from djoser.serializers import UserCreateSerializer, TokenSerializer
+from djoser.serializers import (
+    UserCreateSerializer,
+    UserDeleteSerializer,
+    TokenSerializer,
+)
 
 User = get_user_model()
 
@@ -81,6 +85,12 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             User.REQUIRED_FIELDS
         )
         fields += ("works_on_fish_base",)
+
+
+class CustomUserDeleteSerializer(serializers.Serializer):
+    class Meta:
+        model = User
+        fields = []
 
 
 class CustomTokenSerializer(TokenSerializer):
