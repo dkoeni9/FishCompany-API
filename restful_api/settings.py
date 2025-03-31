@@ -143,12 +143,10 @@ REST_FRAMEWORK = {
 DJOSER = {
     "PERMISSIONS": {
         "user_delete": [
-            "rest_framework.permissions.IsAuthenticated",
+            "api.permissions.IsEntrepreneur",
         ],
     },
     "SERIALIZERS": {
-        "user_create": "api.serializers.CustomUserCreateSerializer",
-        "user_delete": "api.serializers.CustomUserDeleteSerializer",
         "token": "api.serializers.CustomTokenSerializer",
     },
 }

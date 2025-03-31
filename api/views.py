@@ -25,20 +25,6 @@ from rest_framework.permissions import AllowAny
 # Create your views here.
 
 
-class ExampleView(APIView):
-    authentication_classes = [
-        TokenAuthentication,
-    ]
-    permission_classes = [AllowAny]
-
-    def get(self, request, format=None):
-        content = {
-            "user": str(request.user),  # `django.contrib.auth.User` instance.
-            "auth": str(request.auth),  # None
-        }
-        return Response(content)
-
-
 class UserCompanyView(generics.RetrieveAPIView):
     serializer_class = UserCompanySerializer
     permission_classes = [IsEntrepreneur]
@@ -99,6 +85,13 @@ class CompanyAddBaseView(generics.CreateAPIView):
 class CustomUserViewSet(DjoserUserViewSet):
     permission_classes = [IsEntrepreneur]
 
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CustomUserCreateSerializer
+        elif self.action == "destroy":
+            return CustomUserDeleteSerializer
+        return super().get_serializer_class()
+
     def create(self, request, *args, **kwargs):
         user = request.user
         data = request.data.copy()
@@ -135,9 +128,7 @@ class CustomUserViewSet(DjoserUserViewSet):
 
         if not user.works_on_fish_base:
             return Response(
-                {
-                    "error": "You cannot delete a user who is not assigned to a fish base."
-                },
+                {"error": "User is not Staff."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -148,7 +139,7 @@ class CustomUserViewSet(DjoserUserViewSet):
             )
 
         self.perform_destroy(user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Success."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class FishListView(generics.ListAPIView):

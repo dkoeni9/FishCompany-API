@@ -78,13 +78,19 @@ class CustomUserCreateSerializer(UserCreateSerializer):
     works_on_fish_base = serializers.PrimaryKeyRelatedField(
         queryset=FishBase.objects.all(), write_only=True
     )
+    description = serializers.CharField(
+        source="description_worker_on_fish_base", write_only=True, allow_blank=True
+    )
 
     class Meta:
         model = User
         fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
             User.REQUIRED_FIELDS
         )
-        fields += ("works_on_fish_base",)
+        fields += (
+            "works_on_fish_base",
+            "description",
+        )
 
 
 class CustomUserDeleteSerializer(serializers.Serializer):
