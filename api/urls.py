@@ -7,7 +7,6 @@ from . import views
 from djoser.views import TokenCreateView, TokenDestroyView, UserViewSet
 
 urlpatterns = [
-    path("example/", views.ExampleView.as_view()),
     # path("auth/", include("rest_framework.urls")),
     # re_path(r"^auth/", include("djoser.urls.authtoken")),
     # re_path(r"^auth/", include("djoser.urls")),
@@ -20,13 +19,19 @@ urlpatterns = [
     path("Auth/RegisterFisher", UserViewSet.as_view({"post": "create"})),
     # Company
     path("Company/GetInfo", views.UserCompanyView.as_view()),
-    path("Company/GetFishBases", views.CompanyFishBaseView.as_view()),
+    path("Company/GetFishBases", views.FishBaseViewSet.as_view({"get": "list"})),
     path("Company/GetStaff", views.CompanyStaffView.as_view()),
-    path("Company/AddBase", views.CompanyAddBaseView.as_view()),
+    path("Company/AddBase", views.FishBaseViewSet.as_view({"post": "create"})),
     path("Company/AddStaff", views.CustomUserViewSet.as_view({"post": "create"})),
     path(
         "Company/RemoveStaff/<int:id>",
         views.CustomUserViewSet.as_view({"delete": "destroy"}),
+    ),
+    # FishBase
+    path("FishBase/<int:pk>/GetAllFishes", views.FishBaseFishesView.as_view()),
+    path(
+        "FishBase/<int:pk>/RemoveBase",
+        views.FishBaseViewSet.as_view({"delete": "destroy"}),
     ),
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),

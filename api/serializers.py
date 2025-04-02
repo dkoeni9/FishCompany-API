@@ -20,7 +20,7 @@ class FishSerializer(serializers.ModelSerializer):
 
 class FishBaseSerializer(serializers.ModelSerializer):
     fish_count = serializers.SerializerMethodField()
-    company_name = serializers.CharField(write_only=True)
+    company_name = serializers.CharField(write_only=True, required=False)
 
     def get_fish_count(self, obj):
         return len(obj.fish_in_base) if obj.fish_in_base else 0
@@ -39,6 +39,39 @@ class FishBaseSerializer(serializers.ModelSerializer):
             "entry_price",
             "fish_count",
         )
+
+
+class FishBaseFishesSerializer(serializers.ModelSerializer):
+    fishes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FishBase
+        fields = ("fishes",)
+
+    def get_fishes(self, obj):
+        if not obj.fish_in_base:
+            return []
+
+        fish_data = obj.fish_in_base
+        result = []
+
+        for fish_entry in fish_data:
+            fish_name = fish_entry.get("Name")
+            price_per_kilo = fish_entry.get("PricePerKilo", 0)
+
+            fish_obj = Fish.objects.filter(name=fish_name).first()
+
+            if fish_obj:
+                result.append(
+                    {
+                        "id": fish_obj.id,
+                        "name": fish_name,
+                        "description": fish_obj.description,
+                        "price_per_kilo": price_per_kilo,
+                    }
+                )
+
+        return result
 
 
 class SimpleFishBaseSerializer(serializers.ModelSerializer):

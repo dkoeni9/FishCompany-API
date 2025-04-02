@@ -10,15 +10,16 @@ from .serializers import *
 
 from djoser.views import UserViewSet as DjoserUserViewSet
 
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.authentication import (
     SessionAuthentication,
     BasicAuthentication,
     TokenAuthentication,
 )
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
 
@@ -31,22 +32,6 @@ class UserCompanyView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
-
-
-class CompanyFishBaseView(generics.ListAPIView):
-    serializer_class = FishBaseSerializer
-    permission_classes = [IsEntrepreneur]
-
-    def get_queryset(self):
-        # user_profile = User.objects.select_related("company").get(user=self.request.user)
-        # company = user_profile.company
-
-        # return FishBase.objects.filter(company_name=company.name)
-
-        user = self.request.user
-        company_name = user.company_name
-
-        return FishBase.objects.filter(company_name=company_name)
 
 
 class CompanyStaffView(generics.ListAPIView):
@@ -64,24 +49,6 @@ class CompanyStaffView(generics.ListAPIView):
         return User.objects.filter(works_on_fish_base_id__in=fish_base_ids)
 
 
-class CompanyAddBaseView(generics.CreateAPIView):
-    serializer_class = FishBaseSerializer
-    permission_classes = [IsEntrepreneur]
-
-    def create(self, request, *args, **kwargs):
-        user = request.user
-        data = request.data.copy()
-        data["company_name"] = user.company_name
-
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
-
-
 class CustomUserViewSet(DjoserUserViewSet):
     permission_classes = [IsEntrepreneur]
 
@@ -90,6 +57,8 @@ class CustomUserViewSet(DjoserUserViewSet):
             return CustomUserCreateSerializer
         elif self.action == "destroy":
             return CustomUserDeleteSerializer
+        elif self.action == "list":
+            return CompanyStaffSerializer
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
@@ -140,6 +109,24 @@ class CustomUserViewSet(DjoserUserViewSet):
 
         self.perform_destroy(user)
         return Response({"message": "Success."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class FishBaseFishesView(generics.RetrieveAPIView):
+    serializer_class = FishBaseFishesSerializer
+    permission_classes = [IsEntrepreneur]
+    queryset = FishBase.objects.all()
+
+
+class FishBaseViewSet(ModelViewSet):
+    serializer_class = FishBaseSerializer
+    permission_classes = [IsEntrepreneur]
+
+    def get_queryset(self):
+        user = self.request.user
+        return FishBase.objects.filter(company_name=user.company_name).order_by("id")
+
+    def perform_create(self, serializer):
+        serializer.save(company_name=self.request.user.company_name)
 
 
 class FishListView(generics.ListAPIView):
