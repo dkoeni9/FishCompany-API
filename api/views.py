@@ -34,9 +34,10 @@ class UserCompanyView(generics.RetrieveAPIView):
         return self.request.user
 
 
-class CompanyStaffView(generics.ListAPIView):
-    serializer_class = CompanyStaffSerializer
-    permission_classes = [IsEntrepreneur]
+class StaffViewSet(DjoserUserViewSet):
+
+    def get_permissions(self):
+        return [IsEntrepreneur()]
 
     def get_queryset(self):
         user = self.request.user
@@ -46,11 +47,9 @@ class CompanyStaffView(generics.ListAPIView):
             "id", flat=True
         )
 
-        return User.objects.filter(works_on_fish_base_id__in=fish_base_ids)
-
-
-class CustomUserViewSet(DjoserUserViewSet):
-    permission_classes = [IsEntrepreneur]
+        return User.objects.filter(works_on_fish_base_id__in=fish_base_ids).order_by(
+            "works_on_fish_base_id"
+        )
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -59,6 +58,7 @@ class CustomUserViewSet(DjoserUserViewSet):
             return CustomUserDeleteSerializer
         elif self.action == "list":
             return CompanyStaffSerializer
+
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
@@ -90,25 +90,6 @@ class CustomUserViewSet(DjoserUserViewSet):
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
-
-    def destroy(self, request, *args, **kwargs):
-        user = self.get_object()
-        current_user = request.user
-
-        if not user.works_on_fish_base:
-            return Response(
-                {"error": "User is not Staff."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if user.works_on_fish_base.company_name != current_user.company_name:
-            return Response(
-                {"error": "You can only delete employees of your company."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        self.perform_destroy(user)
-        return Response({"message": "Success."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class FishBaseFishesView(generics.RetrieveAPIView):

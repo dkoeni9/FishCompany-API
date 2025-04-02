@@ -20,12 +20,12 @@ urlpatterns = [
     # Company
     path("Company/GetInfo", views.UserCompanyView.as_view()),
     path("Company/GetFishBases", views.FishBaseViewSet.as_view({"get": "list"})),
-    path("Company/GetStaff", views.CompanyStaffView.as_view()),
+    path("Company/GetStaff", views.StaffViewSet.as_view({"get": "list"})),
     path("Company/AddBase", views.FishBaseViewSet.as_view({"post": "create"})),
-    path("Company/AddStaff", views.CustomUserViewSet.as_view({"post": "create"})),
+    path("Company/AddStaff", views.StaffViewSet.as_view({"post": "create"})),
     path(
         "Company/RemoveStaff/<int:id>",
-        views.CustomUserViewSet.as_view({"delete": "destroy"}),
+        views.StaffViewSet.as_view({"delete": "destroy"}),
     ),
     # FishBase
     path("FishBase/<int:pk>/GetAllFishes", views.FishBaseFishesView.as_view()),
