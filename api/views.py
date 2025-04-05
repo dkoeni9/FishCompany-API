@@ -26,8 +26,8 @@ from rest_framework.permissions import AllowAny
 # Create your views here.
 
 
-class UserCompanyView(generics.RetrieveAPIView):
-    serializer_class = UserCompanySerializer
+class CompanyView(generics.RetrieveAPIView):
+    serializer_class = CompanySerializer
     permission_classes = [IsEntrepreneur]
 
     def get_object(self):
@@ -92,12 +92,6 @@ class StaffViewSet(DjoserUserViewSet):
         )
 
 
-class FishBaseFishesView(generics.RetrieveAPIView):
-    serializer_class = FishBaseFishesSerializer
-    permission_classes = [IsEntrepreneur]
-    queryset = FishBase.objects.all()
-
-
 class FishBaseViewSet(ModelViewSet):
     serializer_class = FishBaseSerializer
     permission_classes = [IsEntrepreneur]
@@ -108,6 +102,20 @@ class FishBaseViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(company_name=self.request.user.company_name)
+
+
+class FBFishesView(generics.RetrieveAPIView):
+    permission_classes = [IsEntrepreneur]
+
+    def get_queryset(self):
+        user = self.request.user
+        return FishBase.objects.filter(company_name=user.company_name).order_by("id")
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        fish_in_base = instance.fish_in_base or []
+        serializer = FBFishesSerializer(fish_in_base, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FishListView(generics.ListAPIView):

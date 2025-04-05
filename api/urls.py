@@ -18,7 +18,7 @@ urlpatterns = [
     path("Auth/Logout", TokenDestroyView.as_view()),
     path("Auth/RegisterFisher", UserViewSet.as_view({"post": "create"})),
     # Company
-    path("Company/GetInfo", views.UserCompanyView.as_view()),
+    path("Company/GetInfo", views.CompanyView.as_view()),
     path("Company/GetFishBases", views.FishBaseViewSet.as_view({"get": "list"})),
     path("Company/GetStaff", views.StaffViewSet.as_view({"get": "list"})),
     path("Company/AddBase", views.FishBaseViewSet.as_view({"post": "create"})),
@@ -28,7 +28,7 @@ urlpatterns = [
         views.StaffViewSet.as_view({"delete": "destroy"}),
     ),
     # FishBase
-    path("FishBase/<int:pk>/GetAllFishes", views.FishBaseFishesView.as_view()),
+    path("FishBase/<int:pk>/GetAllFishes", views.FBFishesView.as_view()),
     path(
         "FishBase/<int:pk>/RemoveBase",
         views.FishBaseViewSet.as_view({"delete": "destroy"}),

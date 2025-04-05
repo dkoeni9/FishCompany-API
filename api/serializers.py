@@ -41,37 +41,30 @@ class FishBaseSerializer(serializers.ModelSerializer):
         )
 
 
-class FishBaseFishesSerializer(serializers.ModelSerializer):
-    fishes = serializers.SerializerMethodField()
+class FBFishesSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
+    name = serializers.CharField()
+    description = serializers.CharField(allow_blank=True)
+    price_per_kilo = serializers.DecimalField(max_digits=10, decimal_places=2)
 
-    class Meta:
-        model = FishBase
-        fields = ("fishes",)
+    def to_representation(self, instance):
+        name = instance.get("Name")
+        price_per_kilo = instance.get("PricePerKilo")
 
-    def get_fishes(self, obj):
-        if not obj.fish_in_base:
-            return []
+        try:
+            fish = Fish.objects.get(name=name)
+            id = fish.id
+            description = fish.description or ""
+        except Fish.DoesNotExist:
+            id = None
+            description = ""
 
-        fish_data = obj.fish_in_base
-        result = []
-
-        for fish_entry in fish_data:
-            fish_name = fish_entry.get("Name")
-            price_per_kilo = fish_entry.get("PricePerKilo", 0)
-
-            fish_obj = Fish.objects.filter(name=fish_name).first()
-
-            if fish_obj:
-                result.append(
-                    {
-                        "id": fish_obj.id,
-                        "name": fish_name,
-                        "description": fish_obj.description,
-                        "price_per_kilo": price_per_kilo,
-                    }
-                )
-
-        return result
+        return {
+            "id": id,
+            "name": name,
+            "description": description,
+            "price_per_kilo": price_per_kilo,
+        }
 
 
 class SimpleFishBaseSerializer(serializers.ModelSerializer):
@@ -97,7 +90,7 @@ class CompanyStaffSerializer(serializers.ModelSerializer):
         )
 
 
-class UserCompanySerializer(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     name = serializers.CharField(source="company_name")
     address = serializers.CharField(source="company_address")
