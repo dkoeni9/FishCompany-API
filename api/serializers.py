@@ -41,6 +41,12 @@ class FishBaseSerializer(serializers.ModelSerializer):
         )
 
 
+class SimpleFishBaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FishBase
+        fields = ("id", "name", "address")
+
+
 class FBFishesSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False, allow_null=True)
     name = serializers.CharField()
@@ -67,13 +73,40 @@ class FBFishesSerializer(serializers.Serializer):
         }
 
 
-class SimpleFishBaseSerializer(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(readon_only=True)
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True)
+    middle_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+    name = serializers.CharField(source="company_name")
+    address = serializers.CharField(source="company_address")
+
     class Meta:
-        model = FishBase
+        model = User
         fields = ("id", "name", "address")
 
 
-class CompanyStaffSerializer(serializers.ModelSerializer):
+class CompanyCreateSerializer(UserCreateSerializer):
+    id = serializers.IntegerField(readon_only=True)
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True)
+    middle_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+    name = serializers.CharField(source="company_name")
+    address = serializers.CharField(source="company_address")
+
+    class Meta:
+        model = User
+        fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
+            User.REQUIRED_FIELDS
+        )
+        fields += ("name", "address")
+
+
+class StaffSerializer(serializers.ModelSerializer):
     works_on_fish_base_id = serializers.CharField(write_only=True)
     fish_base = SimpleFishBaseSerializer(source="works_on_fish_base", read_only=True)
 
@@ -90,17 +123,7 @@ class CompanyStaffSerializer(serializers.ModelSerializer):
         )
 
 
-class CompanySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField(source="company_name")
-    address = serializers.CharField(source="company_address")
-
-    class Meta:
-        model = User
-        fields = ("id", "name", "address")
-
-
-class CustomUserCreateSerializer(UserCreateSerializer):
+class StaffCreateSerializer(UserCreateSerializer):
     works_on_fish_base = serializers.PrimaryKeyRelatedField(
         queryset=FishBase.objects.all(), write_only=True
     )

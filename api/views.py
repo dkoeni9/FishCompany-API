@@ -34,6 +34,21 @@ class CompanyView(generics.RetrieveAPIView):
         return self.request.user
 
 
+class CompanyViewSet(DjoserUserViewSet):
+    queryset = User.objects.all()
+    serializer_class = CompanySerializer
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CompanyCreateSerializer
+        elif self.action == "destroy":
+            return CustomUserDeleteSerializer
+        elif self.action == "list":
+            return CompanySerializer
+
+        return super().get_serializer_class()
+
+
 class StaffViewSet(DjoserUserViewSet):
 
     def get_permissions(self):
@@ -53,11 +68,11 @@ class StaffViewSet(DjoserUserViewSet):
 
     def get_serializer_class(self):
         if self.action == "create":
-            return CustomUserCreateSerializer
+            return StaffCreateSerializer
         elif self.action == "destroy":
             return CustomUserDeleteSerializer
         elif self.action == "list":
-            return CompanyStaffSerializer
+            return StaffSerializer
 
         return super().get_serializer_class()
 
