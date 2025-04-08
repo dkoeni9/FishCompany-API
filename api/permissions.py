@@ -14,7 +14,7 @@ from rest_framework.permissions import BasePermission
 # 	⁃	Close started session
 # 	⁃	View sessions
 
-# Fisherman
+# Fisher
 # 	⁃	View detail end session
 # 	⁃	Reserve session <<include>> Find fish base
 # 	⁃	View sessions

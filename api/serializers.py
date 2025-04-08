@@ -74,12 +74,7 @@ class FBFishesSerializer(serializers.Serializer):
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(readon_only=True)
-    username = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(write_only=True)
-    middle_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
+    id = serializers.IntegerField()
     name = serializers.CharField(source="company_name")
     address = serializers.CharField(source="company_address")
 
@@ -89,7 +84,7 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class CompanyCreateSerializer(UserCreateSerializer):
-    id = serializers.IntegerField(readon_only=True)
+    id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(write_only=True)

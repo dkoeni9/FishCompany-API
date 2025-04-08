@@ -35,16 +35,19 @@ class CompanyView(generics.RetrieveAPIView):
 
 
 class CompanyViewSet(DjoserUserViewSet):
-    queryset = User.objects.all()
     serializer_class = CompanySerializer
+
+    def get_permissions(self):
+        # change to Admin
+        return [AllowAny()]
 
     def get_serializer_class(self):
         if self.action == "create":
             return CompanyCreateSerializer
         elif self.action == "destroy":
             return CustomUserDeleteSerializer
-        elif self.action == "list":
-            return CompanySerializer
+        # elif self.action == "list":
+        #     return CompanySerializer
 
         return super().get_serializer_class()
 
@@ -137,29 +140,6 @@ class FishListView(generics.ListAPIView):
     queryset = Fish.objects.all()
     serializer_class = FishSerializer
     permission_classes = [IsEntrepreneur]
-
-
-@csrf_exempt
-def add_company(request):
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Invalid method specified in request. POST request required."},
-            status=405,
-        )
-
-    data = json.loads(request.body)
-    user = User(
-        login=data.get("Login"),
-        password=data.get("Password"),
-        first_name=data.get("FirstName"),
-        middle_name=data.get("MiddleName"),
-        last_name=data.get("LastName"),
-        company_name=data.get("Name"),
-        company_address=data.get("Address"),
-    )
-    user.save()
-
-    return JsonResponse({"Id": user.pk}, status=201)
 
 
 @csrf_exempt
