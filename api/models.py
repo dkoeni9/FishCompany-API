@@ -9,6 +9,19 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
+class Company(models.Model):
+    name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        managed = True
+        db_table = "company"
+        verbose_name_plural = "companies"
+
+
 class Fish(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -44,7 +57,7 @@ class FishBase(models.Model):
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password, **extra_fields):
         if not username:
-            raise ValueError("The UserLogin field must be set")
+            raise ValueError("The Username field must be set")
         user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
