@@ -36,15 +36,15 @@ class Fish(models.Model):
 
 
 class FishBase(models.Model):
-    company_name = models.CharField(max_length=100)
+    company = models.ForeignKey(Company, models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    address = models.CharField(max_length=255)
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
     entry_price = models.DecimalField(max_digits=10, decimal_places=2)
+    price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
     fish_in_base = models.JSONField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"'{self.name}' base of '{self.company_name}' company"
@@ -72,12 +72,11 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractUser):
     middle_name = models.CharField(max_length=50, blank=True, null=True)
-    company_name = models.CharField(max_length=100, blank=True, null=True)
-    company_address = models.CharField(max_length=255, blank=True, null=True)
+    company = models.ForeignKey(Company, models.CASCADE, blank=True, null=True)
     works_on_fish_base = models.ForeignKey(
-        FishBase, models.DO_NOTHING, blank=True, null=True
+        FishBase, models.CASCADE, blank=True, null=True
     )
-    description_worker_on_fish_base = models.TextField(blank=True, null=True)
+    fish_base_worker_description = models.TextField(blank=True, null=True)
 
     email = None
     date_joined = None
