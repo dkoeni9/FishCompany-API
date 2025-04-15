@@ -7,6 +7,9 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db.models import Value
+from django.db.models.functions import Now
+from django.utils import timezone
 
 
 class Company(models.Model):
@@ -54,39 +57,25 @@ class FishBase(models.Model):
         db_table = "fish_base"
 
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, username, password, **extra_fields):
-        if not username:
-            raise ValueError("The Username field must be set")
-        user = self.model(username=username, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, username, password, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_active", True)
-        return self.create_user(username, password, **extra_fields)
-
-
 class User(AbstractUser):
-    middle_name = models.CharField(max_length=50, blank=True, null=True)
     company = models.ForeignKey(Company, models.CASCADE, blank=True, null=True)
+    middle_name = models.CharField(max_length=50, blank=True, null=True)
     works_on_fish_base = models.ForeignKey(
         FishBase, models.CASCADE, blank=True, null=True
     )
     fish_base_worker_description = models.TextField(blank=True, null=True)
 
-    email = None
-    date_joined = None
-    last_login = None
-
-    # Side Note: If you are extending PermissionsMixin to your custom user than you do not need is_superuser to be defined explicitly, PermissionsMixin already have this in it.
-
-    objects = CustomUserManager()
+    email = models.EmailField(blank=True, null=True)
+    is_superuser = models.BooleanField(default=False, db_default=Value(False))
+    is_staff = models.BooleanField(default=False, db_default=Value(False))
+    is_active = models.BooleanField(default=True, db_default=Value(True))
+    last_login = models.DateTimeField(blank=True, null=True)
+    date_joined = models.DateTimeField(default=timezone.now, db_default=timezone.now)
 
     REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
+
+    def __str__(self):
+        return self.username
 
     class Meta:
         managed = True
