@@ -1,8 +1,5 @@
-import json
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 
 from .models import Fish, FishBase, User
 from .permissions import *
@@ -12,18 +9,10 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.authentication import (
-    SessionAuthentication,
-    BasicAuthentication,
-    TokenAuthentication,
-)
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-
-
-# Create your views here.
 
 
 class CompanyView(generics.RetrieveAPIView):
@@ -31,7 +20,7 @@ class CompanyView(generics.RetrieveAPIView):
     permission_classes = [IsEntrepreneur]
 
     def get_object(self):
-        return self.request.user
+        return self.request.user.company
 
 
 class CompanyViewSet(DjoserUserViewSet):
@@ -59,9 +48,8 @@ class StaffViewSet(DjoserUserViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        company_name = user.company_name
 
-        fish_base_ids = FishBase.objects.filter(company_name=company_name).values_list(
+        fish_base_ids = FishBase.objects.filter(company=user.company).values_list(
             "id", flat=True
         )
 
@@ -88,7 +76,7 @@ class StaffViewSet(DjoserUserViewSet):
             try:
                 fish_base = FishBase.objects.get(id=fish_base_id)
 
-                if fish_base.company_name != user.company_name:
+                if fish_base.company != user.company:
                     return Response(
                         {"error": "Fish base does not belong to your company."},
                         status=status.HTTP_403_FORBIDDEN,
@@ -116,10 +104,10 @@ class FishBaseViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return FishBase.objects.filter(company_name=user.company_name).order_by("id")
+        return FishBase.objects.filter(company=user.company).order_by("id")
 
     def perform_create(self, serializer):
-        serializer.save(company_name=self.request.user.company_name)
+        serializer.save(company=self.request.user.company)
 
 
 class FBFishesView(generics.RetrieveAPIView):
@@ -127,7 +115,7 @@ class FBFishesView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return FishBase.objects.filter(company_name=user.company_name).order_by("id")
+        return FishBase.objects.filter(company=user.company).order_by("id")
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

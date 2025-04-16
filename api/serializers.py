@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from .models import Fish, FishBase
+from .models import Company, Fish, FishBase, User
 from rest_framework import serializers
 from djoser.conf import settings
 from djoser.serializers import (
@@ -9,7 +9,15 @@ from djoser.serializers import (
     TokenSerializer,
 )
 
-User = get_user_model()
+
+class CompanySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    address = serializers.CharField()
+
+    class Meta:
+        model = Company
+        fields = "__all__"
 
 
 class FishSerializer(serializers.ModelSerializer):
@@ -20,7 +28,6 @@ class FishSerializer(serializers.ModelSerializer):
 
 class FishBaseSerializer(serializers.ModelSerializer):
     fish_count = serializers.SerializerMethodField()
-    company_name = serializers.CharField(write_only=True, required=False)
 
     def get_fish_count(self, obj):
         return len(obj.fish_in_base) if obj.fish_in_base else 0
@@ -29,7 +36,6 @@ class FishBaseSerializer(serializers.ModelSerializer):
         model = FishBase
         fields = (
             "id",
-            "company_name",
             "latitude",
             "longitude",
             "address",
@@ -73,16 +79,6 @@ class FBFishesSerializer(serializers.Serializer):
         }
 
 
-class CompanySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField(source="company_name")
-    address = serializers.CharField(source="company_address")
-
-    class Meta:
-        model = User
-        fields = ("id", "name", "address")
-
-
 class CompanyCreateSerializer(UserCreateSerializer):
     id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(write_only=True)
@@ -90,8 +86,8 @@ class CompanyCreateSerializer(UserCreateSerializer):
     first_name = serializers.CharField(write_only=True)
     middle_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
-    name = serializers.CharField(source="company_name")
-    address = serializers.CharField(source="company_address")
+    name = serializers.CharField()  # обязательно указывать?
+    address = serializers.CharField()
 
     class Meta:
         model = User
@@ -123,7 +119,7 @@ class StaffCreateSerializer(UserCreateSerializer):
         queryset=FishBase.objects.all(), write_only=True
     )
     description = serializers.CharField(
-        source="description_worker_on_fish_base", write_only=True, allow_blank=True
+        source="fish_base_worker_description", write_only=True, allow_blank=True
     )
 
     class Meta:
