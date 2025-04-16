@@ -109,6 +109,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "email",
+                    models.EmailField(
+                        blank=True, max_length=254, verbose_name="email address"
+                    ),
+                ),
+                (
                     "username",
                     models.CharField(
                         error_messages={
@@ -121,12 +127,6 @@ class Migration(migrations.Migration):
                             django.contrib.auth.validators.UnicodeUsernameValidator()
                         ],
                         verbose_name="username",
-                    ),
-                ),
-                (
-                    "email",
-                    models.EmailField(
-                        blank=True, max_length=254, verbose_name="email address"
                     ),
                 ),
                 ("password", models.CharField(max_length=128, verbose_name="password")),

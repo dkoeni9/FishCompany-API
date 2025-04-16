@@ -69,8 +69,8 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False, db_default=Value(False))
     is_staff = models.BooleanField(default=False, db_default=Value(False))
     is_active = models.BooleanField(default=True, db_default=Value(True))
+    date_joined = models.DateTimeField(default=timezone.now, db_default=Now())
     last_login = models.DateTimeField(blank=True, null=True)
-    date_joined = models.DateTimeField(default=timezone.now, db_default=timezone.now)
 
     REQUIRED_FIELDS = ["first_name", "middle_name", "last_name"]
 
