@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -13,6 +14,15 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+
+
+class FisherViewSet(DjoserUserViewSet):
+    def perform_create(self, serializer, *args, **kwargs):
+        super().perform_create(serializer, *args, **kwargs)
+
+        user = serializer.instance
+        fisher_group, _ = Group.objects.get_or_create(name="Fisher")
+        user.groups.add(fisher_group)
 
 
 class CompanyView(generics.RetrieveAPIView):
@@ -92,6 +102,11 @@ class StaffViewSet(DjoserUserViewSet):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        created_user = serializer.instance
+        staff_group, _ = Group.objects.get_or_create(name="Staff")
+        created_user.groups.add(staff_group)
+
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers

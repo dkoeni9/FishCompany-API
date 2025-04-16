@@ -4,7 +4,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 
-from djoser.views import TokenCreateView, TokenDestroyView, UserViewSet
+from djoser.views import TokenCreateView, TokenDestroyView
 
 urlpatterns = [
     # path("auth/", include("rest_framework.urls")),
@@ -16,7 +16,7 @@ urlpatterns = [
     # Auth
     path("Auth/SignIn", TokenCreateView.as_view()),
     path("Auth/Logout", TokenDestroyView.as_view()),
-    path("Auth/RegisterFisher", UserViewSet.as_view({"post": "create"})),
+    path("Auth/RegisterFisher", views.FisherViewSet.as_view({"post": "create"})),
     # Company
     path("Company/GetInfo", views.CompanyView.as_view()),
     path("Company/GetFishBases", views.FishBaseViewSet.as_view({"get": "list"})),

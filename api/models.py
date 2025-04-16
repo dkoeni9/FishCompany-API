@@ -50,7 +50,7 @@ class FishBase(models.Model):
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"'{self.name}' base of '{self.company_name}' company"
+        return f"'{self.name}' base of '{self.company.name}' company"
 
     class Meta:
         managed = True
