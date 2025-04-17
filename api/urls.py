@@ -24,14 +24,25 @@ urlpatterns = [
     path("Company/AddBase", views.FishBaseViewSet.as_view({"post": "create"})),
     path("Company/AddStaff", views.StaffViewSet.as_view({"post": "create"})),
     path(
-        "Company/RemoveStaff/<int:id>",
+        "Company/RemoveStaff/<int:pk>",
         views.StaffViewSet.as_view({"delete": "destroy"}),
     ),
     # FishBase
-    path("FishBase/<int:pk>/GetAllFishes", views.FBFishesView.as_view()),
     path(
         "FishBase/<int:pk>/RemoveBase",
         views.FishBaseViewSet.as_view({"delete": "destroy"}),
+    ),
+    path(
+        "FishBase/<int:base_id>/GetAllFishes",
+        views.FBFishesViewSet.as_view({"get": "list"}),
+    ),
+    path(
+        "FishBase/<int:base_id>/AddFish",
+        views.FBFishesViewSet.as_view({"post": "create"}),
+    ),
+    path(
+        "FishBase/<int:base_id>/RemoveFish/<int:fish_id>",
+        views.FBFishesViewSet.as_view({"delete": "destroy"}),
     ),
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),

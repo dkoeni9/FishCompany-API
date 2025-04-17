@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from .models import Company, Fish, FishBase, User
+from .models import Company, Fish, FishBase, FishInBase, User
 from rest_framework import serializers
 from djoser.conf import settings
 from djoser.serializers import (
@@ -53,30 +53,15 @@ class SimpleFishBaseSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "address")
 
 
-class FBFishesSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False, allow_null=True)
-    name = serializers.CharField()
-    description = serializers.CharField(allow_blank=True)
-    price_per_kilo = serializers.DecimalField(max_digits=10, decimal_places=2)
+class FBFishesSerializer(serializers.ModelSerializer):
+    fish_id = serializers.IntegerField(write_only=True)
+    id = serializers.IntegerField(source="fish.id", read_only=True)
+    name = serializers.CharField(source="fish.name", read_only=True)
+    description = serializers.CharField(source="fish.description", read_only=True)
 
-    def to_representation(self, instance):
-        name = instance.get("Name")
-        price_per_kilo = instance.get("PricePerKilo")
-
-        try:
-            fish = Fish.objects.get(name=name)
-            id = fish.id
-            description = fish.description or ""
-        except Fish.DoesNotExist:
-            id = None
-            description = ""
-
-        return {
-            "id": id,
-            "name": name,
-            "description": description,
-            "price_per_kilo": price_per_kilo,
-        }
+    class Meta:
+        model = FishInBase
+        fields = ["fish_id", "id", "name", "description", "price_per_kilo"]
 
 
 class CompanyCreateSerializer(UserCreateSerializer):

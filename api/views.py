@@ -10,6 +10,7 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
@@ -125,18 +126,53 @@ class FishBaseViewSet(ModelViewSet):
         serializer.save(company=self.request.user.company)
 
 
-class FBFishesView(generics.RetrieveAPIView):
+class FBFishesViewSet(ModelViewSet):
+    serializer_class = FBFishesSerializer
     permission_classes = [IsEntrepreneur]
 
     def get_queryset(self):
         user = self.request.user
-        return FishBase.objects.filter(company=user.company).order_by("id")
+        base_id = self.kwargs["base_id"]
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        fish_in_base = instance.fish_in_base or []
-        serializer = FBFishesSerializer(fish_in_base, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            fish_base = FishBase.objects.get(id=base_id)
+        except FishBase.DoesNotExist:
+            raise PermissionDenied("Fish base not found.")
+
+        if fish_base.company != user.company:
+            raise PermissionDenied("You do not have access to this fish base.")
+
+        return FishInBase.objects.filter(fish_base_id=base_id)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        base_id = self.kwargs["base_id"]
+
+        try:
+            fish_base = FishBase.objects.get(id=base_id, company=user.company)
+        except FishBase.DoesNotExist:
+            raise PermissionDenied(
+                "You are not allowed to add fish to a base that does not belong to your company."
+            )
+
+        serializer.save(fish_base=fish_base)
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        base_id = self.kwargs["base_id"]
+        fish_id = self.kwargs["fish_id"]
+
+        try:
+            instance = FishInBase.objects.get(
+                fish_base__id=base_id, fish_base__company=user.company, fish__id=fish_id
+            )
+        except FishInBase.DoesNotExist:
+            raise PermissionDenied(
+                "You are not allowed to remove fish from a base that does not belong to your company."
+            )
+
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FishListView(generics.ListAPIView):
