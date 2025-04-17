@@ -46,7 +46,7 @@ class FishBase(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     entry_price = models.DecimalField(max_digits=10, decimal_places=2)
     price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
-    fishes = models.ManyToManyField(Fish, through="FishInBase", related_name="bases")
+    fish = models.ManyToManyField(Fish, through="FishInBase", related_name="bases")
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):

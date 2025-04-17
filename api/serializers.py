@@ -30,7 +30,7 @@ class FishBaseSerializer(serializers.ModelSerializer):
     fish_count = serializers.SerializerMethodField()
 
     def get_fish_count(self, obj):
-        return len(obj.fish_in_base) if obj.fish_in_base else 0
+        return obj.fish.count()
 
     class Meta:
         model = FishBase
