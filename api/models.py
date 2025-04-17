@@ -46,7 +46,7 @@ class FishBase(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     entry_price = models.DecimalField(max_digits=10, decimal_places=2)
     price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
-    fish_in_base = models.JSONField(blank=True, null=True)
+    fishes = models.ManyToManyField(Fish, through="FishInBase", related_name="bases")
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -55,6 +55,15 @@ class FishBase(models.Model):
     class Meta:
         managed = True
         db_table = "fish_base"
+
+
+class FishInBase(models.Model):
+    fish_base = models.ForeignKey(FishBase, on_delete=models.CASCADE)
+    fish = models.ForeignKey(Fish, on_delete=models.CASCADE)
+    price_per_kilo = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        unique_together = ("fish_base", "fish")
 
 
 class User(AbstractUser):
