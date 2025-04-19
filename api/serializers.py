@@ -53,6 +53,12 @@ class SimpleFishBaseSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "address")
 
 
+class FishBasePhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FishBase
+        fields = ("photo",)
+
+
 class FBFishesSerializer(serializers.ModelSerializer):
     fish_id = serializers.IntegerField(write_only=True)
     id = serializers.IntegerField(source="fish.id", read_only=True)

@@ -2,6 +2,10 @@ from django.contrib.auth.models import Group
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+import os
+from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
+
 from .models import Fish, FishBase, User
 from .permissions import *
 from .serializers import *
@@ -179,6 +183,41 @@ class FishListView(generics.ListAPIView):
     queryset = Fish.objects.all()
     serializer_class = FishSerializer
     permission_classes = [IsEntrepreneur]
+
+
+class UploadPhotoView(APIView):
+    serializer_class = FishBasePhotoSerializer
+    permission_classes = [IsEntrepreneur]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk, *args, **kwargs):
+        user = request.user
+
+        try:
+            fish_base = FishBase.objects.get(id=pk, company=user.company)
+        except FishBase.DoesNotExist:
+            raise PermissionDenied("You do not have access to this fish base.")
+
+        file = request.FILES.get("file")
+        if not file:
+            return Response(
+                {"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+            return Response(
+                {"error": "Invalid file format. Only .png and .jpg are allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.serializer_class(
+            instance=fish_base, data={"photo": file}, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"Path": fish_base.photo.url}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt

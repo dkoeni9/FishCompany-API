@@ -145,3 +145,6 @@ DJOSER = {
         "token": "api.serializers.CustomTokenSerializer",
     },
 }
+
+MEDIA_ROOT = BASE_DIR / "media"  # Where user-uploaded files are stored
+MEDIA_URL = "/media/"

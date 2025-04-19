@@ -38,6 +38,10 @@ class Fish(models.Model):
         verbose_name_plural = "fishes"
 
 
+def fishbase_photo_path(instance, filename):
+    return f"Photos/FishBases/{instance.id}.jpg"
+
+
 class FishBase(models.Model):
     company = models.ForeignKey(Company, models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=100)
@@ -47,6 +51,7 @@ class FishBase(models.Model):
     entry_price = models.DecimalField(max_digits=10, decimal_places=2)
     price_per_hour = models.DecimalField(max_digits=10, decimal_places=2)
     fish = models.ManyToManyField(Fish, through="FishInBase", related_name="bases")
+    photo = models.ImageField(upload_to=fishbase_photo_path, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
