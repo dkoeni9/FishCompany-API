@@ -12,7 +12,7 @@ urlpatterns = [
     # re_path(r"^auth/", include("djoser.urls.authtoken")),
     # re_path(r"^auth/", include("djoser.urls")),
     # Admin
-    path("Admin/AddCompany", views.CompanyViewSet.as_view({"post": "create"})),
+    path("Admin/AddCompany", views.EntrepreneurViewSet.as_view({"post": "create"})),
     path("Admin/GetCompanies", views.get_companies),
     # Auth
     path("Auth/SignIn", TokenCreateView.as_view()),

@@ -21,6 +21,38 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
 
+class EntrepreneurViewSet(DjoserUserViewSet):
+    def get_permissions(self):
+        return [IsEntrepreneur()]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return EntrepreneurSerializer
+        elif self.action == "destroy":
+            return CustomUserDeleteSerializer
+        #!
+        elif self.action == "list":
+            return EntrepreneurSerializer
+
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        created_user = serializer.instance
+        entrepreneur_group, _ = Group.objects.get_or_create(name="Entrepreneur")
+        created_user.groups.add(entrepreneur_group)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
 class FisherViewSet(DjoserUserViewSet):
     def perform_create(self, serializer, *args, **kwargs):
         super().perform_create(serializer, *args, **kwargs)
@@ -38,26 +70,7 @@ class CompanyView(generics.RetrieveAPIView):
         return self.request.user.company
 
 
-class CompanyViewSet(DjoserUserViewSet):
-    serializer_class = CompanySerializer
-
-    def get_permissions(self):
-        # change to Admin
-        return [AllowAny()]
-
-    def get_serializer_class(self):
-        if self.action == "create":
-            return CompanyCreateSerializer
-        elif self.action == "destroy":
-            return CustomUserDeleteSerializer
-        # elif self.action == "list":
-        #     return CompanySerializer
-
-        return super().get_serializer_class()
-
-
 class StaffViewSet(DjoserUserViewSet):
-
     def get_permissions(self):
         return [IsEntrepreneur()]
 

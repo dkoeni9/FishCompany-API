@@ -11,13 +11,37 @@ from djoser.serializers import (
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    address = serializers.CharField()
+    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Company
         fields = "__all__"
+
+
+class EntrepreneurSerializer(UserCreateSerializer):
+    company = CompanySerializer()
+
+    class Meta:
+        model = User
+        fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
+            User.REQUIRED_FIELDS
+        )
+        fields += ("company",)
+
+    def create(self, validated_data):
+        company_data = validated_data.pop("company")
+
+        user = User.objects.create(**validated_data)
+        Profile.objects.create(user=user, **profile_data)
+
+        company_serializer = CompanySerializer(data=company_data)
+        company_serializer.is_valid(raise_exception=True)
+        company = company_serializer.save()
+
+        user.company = company
+        user.save()
+
+        return user
 
 
 class FishSerializer(serializers.ModelSerializer):
@@ -47,6 +71,14 @@ class FishBaseSerializer(serializers.ModelSerializer):
         )
 
 
+class CompanyBasesSerializer(serializers.ModelSerializer):
+    fish_bases = FishBaseSerializer(source="fishbase_set", many=True, read_only=True)
+
+    class Meta:
+        model = Company
+        fields = ["id", "name", "address", "fish_bases"]
+
+
 class SimpleFishBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = FishBase
@@ -68,24 +100,6 @@ class FBFishesSerializer(serializers.ModelSerializer):
     class Meta:
         model = FishInBase
         fields = ["fish_id", "id", "name", "description", "price_per_kilo"]
-
-
-class CompanyCreateSerializer(UserCreateSerializer):
-    id = serializers.IntegerField(read_only=True)
-    username = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(write_only=True)
-    middle_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
-    name = serializers.CharField()  # обязательно указывать?
-    address = serializers.CharField()
-
-    class Meta:
-        model = User
-        fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
-            User.REQUIRED_FIELDS
-        )
-        fields += ("name", "address")
 
 
 class StaffSerializer(serializers.ModelSerializer):
@@ -145,7 +159,7 @@ class CustomTokenSerializer(TokenSerializer):
         user = obj.user
         if user.groups.exists():
             return user.groups.first().name
-        return "DefaultRole"
+        return None
 
     class Meta(TokenSerializer.Meta):
         fields = ("id", "username", "full_name", "role", "token")
