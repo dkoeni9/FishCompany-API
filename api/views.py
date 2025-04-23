@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import Fish, FishBase, User
+from .models import Fish, FishBase, User, StaffProfile
 from .permissions import *
 from .serializers import *
 
@@ -36,21 +36,12 @@ class EntrepreneurViewSet(DjoserUserViewSet):
 
         return super().get_serializer_class()
 
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
+    def perform_create(self, serializer, *args, **kwargs):
+        super().perform_create(serializer, *args, **kwargs)
 
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-
-        created_user = serializer.instance
+        user = serializer.instance
         entrepreneur_group, _ = Group.objects.get_or_create(name="Entrepreneur")
-        created_user.groups.add(entrepreneur_group)
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        user.groups.add(entrepreneur_group)
 
 
 class FisherViewSet(DjoserUserViewSet):
@@ -81,8 +72,10 @@ class StaffViewSet(DjoserUserViewSet):
             "id", flat=True
         )
 
-        return User.objects.filter(works_on_fish_base_id__in=fish_base_ids).order_by(
-            "works_on_fish_base_id"
+        return (
+            StaffProfile.objects.filter(fish_base_id__in=fish_base_ids)
+            .select_related("user", "fish_base")
+            .order_by("fish_base_id")
         )
 
     def get_serializer_class(self):
@@ -95,40 +88,12 @@ class StaffViewSet(DjoserUserViewSet):
 
         return super().get_serializer_class()
 
-    def create(self, request, *args, **kwargs):
-        user = request.user
-        data = request.data.copy()
-        fish_base_id = data.pop("fish_base_id", None)
+    def perform_create(self, serializer, *args, **kwargs):
+        super().perform_create(serializer, *args, **kwargs)
 
-        if fish_base_id:
-            try:
-                fish_base = FishBase.objects.get(id=fish_base_id)
-
-                if fish_base.company != user.company:
-                    return Response(
-                        {"error": "Fish base does not belong to your company."},
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-
-                data["works_on_fish_base"] = fish_base.id
-            except FishBase.DoesNotExist:
-                return Response(
-                    {"error": "Fish base not found."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-
-        created_user = serializer.instance
+        user = serializer.instance
         staff_group, _ = Group.objects.get_or_create(name="Staff")
-        created_user.groups.add(staff_group)
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        user.groups.add(staff_group)
 
 
 class FishBaseViewSet(ModelViewSet):

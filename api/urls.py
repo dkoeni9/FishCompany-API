@@ -25,7 +25,7 @@ urlpatterns = [
     path("Company/AddBase", views.FishBaseViewSet.as_view({"post": "create"})),
     path("Company/AddStaff", views.StaffViewSet.as_view({"post": "create"})),
     path(
-        "Company/RemoveStaff/<int:pk>",
+        "Company/RemoveStaff/<int:id>",
         views.StaffViewSet.as_view({"delete": "destroy"}),
     ),
     # FishBase

@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from .models import Company, Fish, FishBase, FishInBase, User
+from .models import Company, Fish, FishBase, FishInBase, User, StaffProfile
 from rest_framework import serializers
 from djoser.conf import settings
 from djoser.serializers import (
@@ -15,7 +15,7 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = "__all__"
+        fields = ("id", "name", "address")
 
 
 class EntrepreneurSerializer(UserCreateSerializer):
@@ -32,7 +32,7 @@ class EntrepreneurSerializer(UserCreateSerializer):
         company_data = validated_data.pop("company")
 
         user = User.objects.create(**validated_data)
-        Profile.objects.create(user=user, **profile_data)
+        company.objects.create(owner=user, **company_data)
 
         company_serializer = CompanySerializer(data=company_data)
         company_serializer.is_valid(raise_exception=True)
@@ -71,14 +71,6 @@ class FishBaseSerializer(serializers.ModelSerializer):
         )
 
 
-class CompanyBasesSerializer(serializers.ModelSerializer):
-    fish_bases = FishBaseSerializer(source="fishbase_set", many=True, read_only=True)
-
-    class Meta:
-        model = Company
-        fields = ["id", "name", "address", "fish_bases"]
-
-
 class SimpleFishBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = FishBase
@@ -91,6 +83,14 @@ class FishBasePhotoSerializer(serializers.ModelSerializer):
         fields = ("photo",)
 
 
+class CompanyBasesSerializer(serializers.ModelSerializer):
+    fish_bases = FishBaseSerializer(source="fishbase_set", many=True, read_only=True)
+
+    class Meta:
+        model = Company
+        fields = ("id", "name", "address", "fish_bases")
+
+
 class FBFishesSerializer(serializers.ModelSerializer):
     fish_id = serializers.IntegerField(write_only=True)
     id = serializers.IntegerField(source="fish.id", read_only=True)
@@ -99,43 +99,69 @@ class FBFishesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FishInBase
-        fields = ["fish_id", "id", "name", "description", "price_per_kilo"]
+        fields = ("fish_id", "id", "name", "description", "price_per_kilo")
 
 
 class StaffSerializer(serializers.ModelSerializer):
-    works_on_fish_base_id = serializers.CharField(write_only=True)
-    fish_base = SimpleFishBaseSerializer(source="works_on_fish_base", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    middle_name = serializers.CharField(source="user.middle_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    fish_base = SimpleFishBaseSerializer(read_only=True)
 
     class Meta:
-        model = User
+        model = StaffProfile
         fields = (
             "id",
             "username",
             "first_name",
             "middle_name",
             "last_name",
-            "works_on_fish_base_id",
             "fish_base",
         )
 
 
 class StaffCreateSerializer(UserCreateSerializer):
-    works_on_fish_base = serializers.PrimaryKeyRelatedField(
+    fish_base_id = serializers.PrimaryKeyRelatedField(
         queryset=FishBase.objects.all(), write_only=True
     )
-    description = serializers.CharField(
-        source="fish_base_worker_description", write_only=True, allow_blank=True
-    )
+    description = serializers.CharField(write_only=True, allow_blank=True)
 
     class Meta:
         model = User
         fields = (settings.USER_ID_FIELD, settings.LOGIN_FIELD, "password") + tuple(
             User.REQUIRED_FIELDS
         )
-        fields += (
-            "works_on_fish_base",
-            "description",
+        fields += ("description", "fish_base_id")
+
+    def validate_fish_base_id(self, fish_base):
+        user = self.context["request"].user
+
+        if fish_base.company != user.company:
+            raise serializers.ValidationError(
+                "Fish base does not belong to your company."
+            )
+
+        return fish_base
+
+    def validate(self, attrs):
+        attrs.pop("fish_base_id", None)
+        attrs.pop("description", None)
+
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        fish_base_id = self.initial_data.get("fish_base_id")
+        description = self.initial_data.get("description", "")
+
+        user = super().create(validated_data)
+
+        fish_base = FishBase.objects.get(pk=fish_base_id)
+
+        StaffProfile.objects.create(
+            user=user, fish_base=fish_base, description=description
         )
+        return user
 
 
 class CustomUserDeleteSerializer(serializers.Serializer):
