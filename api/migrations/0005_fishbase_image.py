@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0004_rename_fishes_fishbase_fish_and_more'),
+        ("api", "0004_rename_fishes_fishbase_fish_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='fishbase',
-            name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='fish_base_images'),
+            model_name="fishbase",
+            name="photo",
+            field=models.ImageField(
+                blank=True, null=True, upload_to="fish_base_images"
+            ),
         ),
     ]
