@@ -51,7 +51,7 @@ class FishSerializer(serializers.ModelSerializer):
 
 
 class FishBaseSerializer(serializers.ModelSerializer):
-    fish_count = serializers.SerializerMethodField()
+    fish_count = serializers.SerializerMethodField(read_only=True)
 
     def get_fish_count(self, obj):
         return obj.fish.count()
@@ -60,10 +60,10 @@ class FishBaseSerializer(serializers.ModelSerializer):
         model = FishBase
         fields = (
             "id",
+            "name",
+            "address",
             "latitude",
             "longitude",
-            "address",
-            "name",
             "description",
             "price_per_hour",
             "entry_price",
@@ -100,6 +100,24 @@ class FBFishesSerializer(serializers.ModelSerializer):
     class Meta:
         model = FishInBase
         fields = ("fish_id", "id", "name", "description", "price_per_kilo")
+
+
+class FishBaseDetailSerializer(serializers.ModelSerializer):
+    fish = FBFishesSerializer(source="fishinbase_set", many=True, read_only=True)
+
+    class Meta:
+        model = FishBase
+        fields = (
+            "id",
+            "name",
+            "address",
+            "latitude",
+            "longitude",
+            "description",
+            "price_per_hour",
+            "entry_price",
+            "fish",
+        )
 
 
 class StaffSerializer(serializers.ModelSerializer):

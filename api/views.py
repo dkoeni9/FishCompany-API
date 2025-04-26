@@ -1,24 +1,16 @@
 from django.contrib.auth.models import Group
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
-import os
-from django.conf import settings
-from rest_framework.parsers import MultiPartParser, FormParser
-
-from .models import Fish, FishBase, User, StaffProfile
+from .models import Fish, FishBase, StaffProfile
 from .permissions import *
 from .serializers import *
 
-from djoser.views import UserViewSet as DjoserUserViewSet
-
-from rest_framework import generics
-from rest_framework import status
+from rest_framework import filters, generics, status, views, viewsets
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+
+from djoser.views import UserViewSet as DjoserUserViewSet
 
 
 class EntrepreneurViewSet(DjoserUserViewSet):
@@ -95,8 +87,25 @@ class StaffViewSet(DjoserUserViewSet):
         staff_group, _ = Group.objects.get_or_create(name="Staff")
         user.groups.add(staff_group)
 
+    def destroy(self, request, *args, **kwargs):
+        staff_profile = self.get_object()
+        user = staff_profile.user
 
-class FishBaseViewSet(ModelViewSet):
+        try:
+            staff_group = Group.objects.get(name="Staff")
+            user.groups.remove(staff_group)
+        except Group.DoesNotExist:
+            pass
+
+        user.is_active = False
+        user.save()
+
+        staff_profile.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FishBaseViewSet(viewsets.ModelViewSet):
     serializer_class = FishBaseSerializer
     permission_classes = [IsEntrepreneur]
 
@@ -108,7 +117,7 @@ class FishBaseViewSet(ModelViewSet):
         serializer.save(company=self.request.user.company)
 
 
-class FBFishesViewSet(ModelViewSet):
+class FBFishesViewSet(viewsets.ModelViewSet):
     serializer_class = FBFishesSerializer
     permission_classes = [IsEntrepreneur]
 
@@ -163,7 +172,7 @@ class FishListView(generics.ListAPIView):
     permission_classes = [IsEntrepreneur]
 
 
-class UploadPhotoView(APIView):
+class UploadPhotoView(views.APIView):
     serializer_class = FishBasePhotoSerializer
     permission_classes = [IsEntrepreneur]
     parser_classes = [MultiPartParser, FormParser]
@@ -198,90 +207,11 @@ class UploadPhotoView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@csrf_exempt
-def get_companies(request):
-    if request.method != "GET":
-        return JsonResponse(
-            {"error": "Invalid method specified in request. GET request required."},
-            status=405,
-        )
+class SearchFishBaseListView(generics.ListAPIView):
+    serializer_class = FishBaseDetailSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name", "address", "fish__name"]
 
-    with_bases = request.GET.get("WithBases", "false").lower() == "true"
-
-    companies = User.objects.filter(company_name__isnull=False).distinct()
-
-    if with_bases:
-        fish_bases = FishBase.objects.all()
-
-        companies_with_bases = []
-        for company in companies:
-            fish_bases = fish_bases.filter(company_name=company.company_name)
-
-            company_data = {
-                "Id": company.pk,
-                "Login": company.login,
-                "Name": company.company_name,
-                "Address": company.company_address,
-                "FirstName": company.first_name,
-                "MiddleName": company.middle_name,
-                "LastName": company.last_name,
-                "FishBases": [
-                    {
-                        "Id": fish_base.pk,
-                        "Latitude": (
-                            float(fish_base.latitude) if fish_base.latitude else None
-                        ),
-                        "Longitude": (
-                            float(fish_base.longitude) if fish_base.longitude else None
-                        ),
-                        "Address": fish_base.address,
-                        "Name": fish_base.name,
-                        "Description": fish_base.description
-                        or "",  # Пустое описание, если None
-                        "PricePerHour": (
-                            float(fish_base.price_per_hour)
-                            if fish_base.price_per_hour
-                            else None
-                        ),
-                        "EntryPrice": (
-                            float(fish_base.entry_price)
-                            if fish_base.entry_price
-                            else None
-                        ),
-                    }
-                    for fish_base in fish_bases
-                ],
-            }
-            companies_with_bases.append(company_data)
-
-        if not with_bases:
-            for company in companies:
-                company_data = {
-                    "Id": company.pk,
-                    "Login": company.login,
-                    "Name": company.company_name,
-                    "Address": company.company_address,
-                    "FirstName": company.first_name,
-                    "MiddleName": company.middle_name,
-                    "LastName": company.last_name,
-                    "FishBases": [],  # Пустой список рыбных баз
-                }
-                companies_with_bases.append(company_data)
-
-        result = companies_with_bases
-
-    return JsonResponse(result, safe=False)
-
-
-def search(request):
-    if request.method == "GET":
-        search = request.GET.get("search", "")
-        fish_bases = (
-            FishBase.objects.filter(name__icontains=search)
-            | FishBase.objects.filter(address__icontains=search)
-            | FishBase.objects.filter(fish_in_base__icontains=search)
-        )
-
-        return JsonResponse([base.serialize() for base in fish_bases], safe=False)
-
-    return JsonResponse({"error": "GET request required."}, status=400)
+    def get_queryset(self):
+        return FishBase.objects.all().distinct().order_by("id")

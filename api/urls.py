@@ -13,7 +13,7 @@ urlpatterns = [
     # re_path(r"^auth/", include("djoser.urls")),
     # Admin
     path("Admin/AddCompany", views.EntrepreneurViewSet.as_view({"post": "create"})),
-    path("Admin/GetCompanies", views.get_companies),
+    # path("Admin/GetCompanies", views.get_companies),
     # Auth
     path("Auth/SignIn", TokenCreateView.as_view()),
     path("Auth/Logout", TokenDestroyView.as_view()),
@@ -52,7 +52,7 @@ urlpatterns = [
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),
     # Search
-    path("Search/GetFishBases", views.search),
+    path("Search/GetFishBases/", views.SearchFishBaseListView.as_view()),
 ]
 
 # urlpatterns = format_suffix_patterns(urlpatterns)
