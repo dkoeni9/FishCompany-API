@@ -1,10 +1,13 @@
 from django.contrib.auth.models import Group
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
-from .models import Fish, FishBase, StaffProfile
+from .models import Fish, FishBase, StaffProfile, FishingSession
 from .permissions import *
 from .serializers import *
 
 from rest_framework import filters, generics, status, views, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -125,10 +128,7 @@ class FBFishesViewSet(viewsets.ModelViewSet):
         user = self.request.user
         base_id = self.kwargs["base_id"]
 
-        try:
-            fish_base = FishBase.objects.get(id=base_id)
-        except FishBase.DoesNotExist:
-            raise PermissionDenied("Fish base not found.")
+        fish_base = get_object_or_404(FishBase, pk=base_id)
 
         if fish_base.company != user.company:
             raise PermissionDenied("You do not have access to this fish base.")
@@ -215,3 +215,97 @@ class SearchFishBaseListView(generics.ListAPIView):
 
     def get_queryset(self):
         return FishBase.objects.all().distinct().order_by("id")
+
+
+class FishingSessionViewSet(viewsets.ViewSet):
+    """
+    Handles fishing sessions for Fishers (create, list)
+    and for Staff (start, close, active_sessions)
+    """
+
+    def get_permissions(self):
+        if self.action in ["create", "list"]:
+            permission_classes = [IsFisher]
+        elif self.action in ["start_session", "close_session", "active_sessions"]:
+            permission_classes = [IsStaff]
+        else:
+            permission_classes = []
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_class(self):
+        if self.action in ["create", "list"]:
+            return FisherSessionSerializer
+        return StaffSessionSerializer
+
+    def list(self, request):
+        """Fisher: list own sessions"""
+        sessions = FishingSession.objects.filter(fisher=request.user)
+        serializer = self.get_serializer_class()(sessions, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        """Fisher: create new session"""
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save(fisher=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"])
+    def start_session(self, request, pk=None):
+        """Staff: start a session"""
+        session = get_object_or_404(FishingSession, pk=pk)
+
+        if session.fish_base != request.user.staff_profile.fish_base:
+            return Response({"detail": "Not your fish base."}, status=403)
+
+        if session.status != 1:
+            return Response(
+                {"detail": "Session already started or closed."}, status=400
+            )
+
+        session.started_at = timezone.now()
+        session.status = 2
+        session.staff = request.user
+        session.save()
+
+        return Response({"detail": "Session started."})
+
+    @action(detail=True, methods=["post"])
+    def close_session(self, request, pk=None):
+        """Staff: close a session"""
+        session = get_object_or_404(FishingSession, pk=pk)
+
+        if session.fish_base != request.user.staff_profile.fish_base:
+            return Response({"detail": "Not your fish base."}, status=403)
+
+        if session.status != 2:
+            return Response(
+                {"detail": "Only started sessions can be closed."}, status=400
+            )
+
+        data = {
+            "closed_at": request.data.get("closed_at", timezone.now()),
+            "fishes": request.data.get("fishes", []),
+            "total_price": request.data.get("total_price", 0),
+        }
+
+        serializer = StaffSessionSerializer(
+            session, data=data, partial=True, context={"request": request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Session closed."})
+        return Response(serializer.errors, status=400)
+
+    @action(detail=False, methods=["get"])
+    def active_sessions(self, request):
+        """Staff: view unclosed sessions at their fish base"""
+        fish_base = request.user.staff_profile.fish_base
+        sessions = FishingSession.objects.filter(
+            fish_base=fish_base,
+            status__in=[FishingSession.Status.CREATED, FishingSession.Status.STARTED],
+        )
+        serializer = self.get_serializer_class()(sessions, many=True)
+        return Response(serializer.data)

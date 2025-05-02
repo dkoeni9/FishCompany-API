@@ -21,7 +21,7 @@ from rest_framework.permissions import BasePermission
 
 # Admin
 # 	⁃	View companies
-# 	⁃	Registration of company
+# 	⁃	Register company
 
 # Anonymous
 # 	⁃	Login

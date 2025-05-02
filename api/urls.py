@@ -45,14 +45,31 @@ urlpatterns = [
         "FishBase/<int:base_id>/RemoveFish/<int:fish_id>",
         views.FBFishesViewSet.as_view({"delete": "destroy"}),
     ),
-    path(
-        "FishBase/<int:pk>/UploadPhoto",
-        views.UploadPhotoView.as_view(),
-    ),
+    path("FishBase/<int:pk>/UploadPhoto", views.UploadPhotoView.as_view()),
     # Fish
     path("Fish/GetFishes", views.FishListView.as_view()),
     # Search
     path("Search/GetFishBases/", views.SearchFishBaseListView.as_view()),
+    # Session
+    path(
+        "Session/GetYourSession/", views.FishingSessionViewSet.as_view({"get": "list"})
+    ),
+    path(
+        "Session/CreateSession/",
+        views.FishingSessionViewSet.as_view({"post": "create"}),
+    ),
+    path(
+        "Session/GetStaffSession/",
+        views.FishingSessionViewSet.as_view({"get": "active_sessions"}),
+    ),
+    path(
+        "Session/StartSession/<int:pk>/",
+        views.FishingSessionViewSet.as_view({"post": "start_session"}),
+    ),
+    path(
+        "Session/CloseSession/<int:pk>/",
+        views.FishingSessionViewSet.as_view({"post": "close_session"}),
+    ),
 ]
 
 # urlpatterns = format_suffix_patterns(urlpatterns)

@@ -7,6 +7,7 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db.models import Value
 from django.db.models.functions import Now
 from django.utils import timezone
@@ -28,7 +29,6 @@ class User(AbstractUser):
         return self.username
 
     class Meta:
-        managed = True
         db_table = "user"
 
 
@@ -45,7 +45,6 @@ class Company(models.Model):
         return self.name
 
     class Meta:
-        managed = True
         db_table = "company"
         verbose_name_plural = "companies"
 
@@ -58,7 +57,6 @@ class Fish(models.Model):
         return self.name
 
     class Meta:
-        managed = True
         db_table = "fish"
         verbose_name_plural = "fishes"
 
@@ -83,7 +81,6 @@ class FishBase(models.Model):
         return f"'{self.name}' base of '{self.company.name}' company"
 
     class Meta:
-        managed = True
         db_table = "fish_base"
 
 
@@ -100,7 +97,6 @@ class StaffProfile(models.Model):
         return f"{self.user.username} - {self.fish_base.name}"
 
     class Meta:
-        managed = True
         db_table = "staff_profile"
 
 
@@ -110,4 +106,32 @@ class FishInBase(models.Model):
     price_per_kilo = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
+        db_table = "fish_in_base"
         unique_together = ("fish_base", "fish")
+
+
+class FishingSession(models.Model):
+    class Status(models.IntegerChoices):
+        CREATED = 1, "Created"
+        STARTED = 2, "Started"
+        CLOSED = 3, "Closed"
+
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices, default=Status.CREATED
+    )
+    fish_base = models.ForeignKey(FishBase, on_delete=models.CASCADE)
+    staff = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="sessions", null=True
+    )
+    fisher = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    number_of_people = models.PositiveIntegerField()
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"Fishing session at {self.fish_base.name} by {self.staff.user.username}"
+
+    class Meta:
+        db_table = "fishing_session"

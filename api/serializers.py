@@ -1,6 +1,14 @@
 from django.contrib.auth import get_user_model
 
-from .models import Company, Fish, FishBase, FishInBase, User, StaffProfile
+from .models import (
+    Company,
+    Fish,
+    FishBase,
+    FishInBase,
+    User,
+    StaffProfile,
+    FishingSession,
+)
 from rest_framework import serializers
 from djoser.conf import settings
 from djoser.serializers import (
@@ -207,3 +215,45 @@ class CustomTokenSerializer(TokenSerializer):
 
     class Meta(TokenSerializer.Meta):
         fields = ("id", "username", "full_name", "role", "token")
+
+
+class FisherSessionSerializer(serializers.ModelSerializer):
+    fish_base_id = serializers.PrimaryKeyRelatedField(
+        queryset=FishBase.objects.all(), source="fish_base", write_only=True
+    )
+    fish_base = SimpleFishBaseSerializer(read_only=True)
+    fishes = FBFishesSerializer(source="fishinbase_set", many=True, read_only=True)
+
+    class Meta:
+        model = FishingSession
+        fields = (
+            "id",
+            "status",
+            "created_at",
+            "started_at",
+            "closed_at",
+            "total_price",
+            "number_of_people",
+            "fish_base_id",
+            "fish_base",
+            "fishes",
+        )
+        read_only_fields = ["started_at", "closed_at", "status", "total_price"]
+
+
+class StaffSessionSerializer(serializers.ModelSerializer):
+    fish_base = FishBaseDetailSerializer(read_only=True)
+
+    class Meta:
+        model = FishingSession
+        fields = (
+            "id",
+            "status",
+            "created_at",
+            "started_at",
+            "closed_at",
+            "total_price",
+            "number_of_people",
+            "fish_base",
+        )
+        read_only_fields = ["created_at", "status"]
